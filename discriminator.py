@@ -16,7 +16,7 @@ def discriminator(self, wave_in, spk=None, reuse=False):
         hi = wave_in
         if len(in_dims) == 2:
             hi = tf.expand_dims(wave_in, -1)
-        elif len(im_dims) < 2 or len(im_dims) > 3:
+        elif len(in_dims) < 2 or len(in_dims) > 3:
             raise ValueError('Discriminator input must be 2-D or 3-D')
 
         batch_size = int(wave_in.get_shape()[0])
