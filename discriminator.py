@@ -59,12 +59,11 @@ def discriminator(self, wave_in, spk=None, reuse=False):
                                 False, 'relu')
                 print()
             print('discriminator deconved shape: ', hi.get_shape())
-            hi_f = flatten(hi)
-            hi_f = tf.nn.dropout(hi_f, self.disc_keep_prob)
-            # last fully connected for decision
-            d_logit_out = fully_connected(hi_f, 1,
-                                          activation_fn=None,
-                                          scope='d_logit')
-            print('*****************************')
+            #hi_f = tf.nn.dropout(hi_f, self.disc_keep_prob)
+            d_logit_out = conv1d(hi, kwidth=1, num_kernels=1,
+                                 init=tf.truncated_normal_initializer(stddev=0.02),
+                                 name='logits_conv')
             d_logit_out = tf.squeeze(d_logit_out)
+            print('discriminator output shape: ', d_logit_out.get_shape())
+            print('*****************************')
             return d_logit_out
