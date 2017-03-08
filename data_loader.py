@@ -13,10 +13,10 @@ def read_and_decode(filename_queue, canvas_size=2**14):
                 'wav_raw': tf.FixedLenFeature([], tf.string),
                 'noisy_raw': tf.FixedLenFeature([], tf.string),
             })
-    wave = tf.decode_raw(features['wav_raw'], tf.int16)
+    wave = tf.decode_raw(features['wav_raw'], tf.int32)
     wave.set_shape(canvas_size)
     wave = (2./65535.) * tf.cast((wave - 32767), tf.float32) + 1.
-    noisy = tf.decode_raw(features['noisy_raw'], tf.int16)
+    noisy = tf.decode_raw(features['noisy_raw'], tf.int32)
     noisy.set_shape(canvas_size)
     noisy = (2./65535.) * tf.cast((noisy - 32767), tf.float32) + 1.
 
