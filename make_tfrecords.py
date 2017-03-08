@@ -32,7 +32,8 @@ def slice_signal(signal, window_size, stride=0.5):
     offset = int(window_size * stride)
     slices = []
     for beg_i, end_i in zip(range(0, n_samples, offset),
-                            range(offset, n_samples + offset, offset)):
+                            range(window_size, n_samples + window_size,
+                                  offset)):
         slices.append(signal[beg_i:end_i])
     return np.array(slices)
 
@@ -89,9 +90,10 @@ def main(opts):
         # process the acoustic and textual data now
         for dset_i, (dset, dset_desc) in enumerate(cfg_desc.iteritems()):
             print('-' * 50)
-            wav_dir = spk_desc['clean']
+            wav_dir = dset_desc['clean']
             wav_files = [os.path.join(wav_dir, wav) for wav in
                            os.listdir(wav_dir) if wav.endswith('.wav')]
+            noisy_dir = dset_desc['noisy']
             nfiles = len(wav_files)
             for m, wav_file in enumerate(wav_files):
                 print('Processing wav file {}/{} {}{}'.format(m + 1,
