@@ -32,10 +32,14 @@ def slice_signal(signal, window_size, stride=0.5):
     offset = int(window_size * stride)
     slices = []
     for beg_i, end_i in zip(range(0, n_samples, offset),
-                            range(window_size, n_samples + window_size,
+                            range(window_size, n_samples + offset,
                                   offset)):
-        slices.append(signal[beg_i:end_i])
-    return np.array(slices)
+        if end_i - beg_i < window_size:
+            break
+        slice_ = signal[beg_i:end_i]
+        if slice_.shape[0] == window_size:
+            slices.append(slice_)
+    return np.array(slices, dtype=np.int32)
 
 def read_and_slice(filename, wav_canvas_size, stride=0.5):
     fm, wav_data = wavfile.read(filename)

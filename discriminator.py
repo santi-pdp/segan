@@ -54,16 +54,19 @@ def discriminator(self, wave_in, spk=None, reuse=False):
             hi = gaussian_noise_layer(hi, self.disc_noise_std)
             print('*** Discriminator summary ***')
             for block_idx, fmaps in enumerate(self.d_num_fmaps):
-                hi = disc_block(block_idx, hi, 5,
+                hi = disc_block(block_idx, hi, 31,
                                 self.d_num_fmaps[block_idx],
-                                False, 'relu')
+                                True, 'leakyrelu')
                 print()
             print('discriminator deconved shape: ', hi.get_shape())
-            #hi_f = tf.nn.dropout(hi_f, self.disc_keep_prob)
+            hi_f = flatten(hi)
+            #hi_f = tf.nn.dropout(hi_f, self.keep_prob_var)
             d_logit_out = conv1d(hi, kwidth=1, num_kernels=1,
                                  init=tf.truncated_normal_initializer(stddev=0.02),
                                  name='logits_conv')
             d_logit_out = tf.squeeze(d_logit_out)
+            d_logit_out = fully_connected(d_logit_out, 1, activation_fn=None,
+                                            )
             print('discriminator output shape: ', d_logit_out.get_shape())
             print('*****************************')
             return d_logit_out

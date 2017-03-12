@@ -4,7 +4,7 @@ from ops import *
 import numpy as np
 
 
-def read_and_decode(filename_queue, canvas_size=2**14):
+def read_and_decode(filename_queue, canvas_size):
     reader = tf.TFRecordReader()
     _, serialized_example = reader.read(filename_queue)
     features = tf.parse_single_example(
