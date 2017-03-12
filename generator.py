@@ -123,7 +123,7 @@ class AEGenerator(object):
     def __init__(self, segan):
         self.segan = segan
 
-    def __call__(self, noisy_w, is_ref, spk=None, z_on=True):
+    def __call__(self, noisy_w, is_ref, spk=None, z_on=True, do_prelu=False):
         # TODO: remove c_vec
         """ Build the graph propagating (noisy_w) --> x
         On first pass will make variables.
@@ -180,7 +180,12 @@ class AEGenerator(object):
                     # store skip connection
                     # last one is not stored cause it's the code
                     skips.append(h_i)
-                h_i = leakyrelu(h_i)
+                if do_prelu:
+                    print('-- Enc: prelu activation --')
+                    h_i = prelu(h_i)
+                else:
+                    print('-- Enc: leakyrelu activation --')
+                    h_i = leakyrelu(h_i)
 
             if z_on:
                 # random code is fused with intermediate representation
@@ -202,13 +207,19 @@ class AEGenerator(object):
                                                h_i_dcv.get_shape()))
                 h_i = h_i_dcv
                 if layer_idx < len(g_dec_depths) - 1:
-                    h_i = leakyrelu(h_i)
+                    if do_prelu:
+                        print('-- Dec: prelu activation --')
+                        h_i = prelu(h_i)
+                    else:
+                        print('-- Dec: leakyrelu activation --')
+                        h_i = leakyrelu(h_i)
                     # fuse skip connection
                     skip_ = skips[-(layer_idx + 1)]
                     print('Fusing skip connection of shape {}'.format(skip_.get_shape()))
                     h_i = tf.concat(2, [h_i, skip_])
 
                 else:
+                    print('-- Dec: tanh activation --')
                     h_i = tf.tanh(h_i)
 
             wave = h_i
