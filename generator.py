@@ -163,6 +163,9 @@ class AEGenerator(object):
         kwidth = 31
         enc_layers = 7
         skips = []
+        if is_ref and do_prelu:
+            #keep track of prelu activations
+            alphas = []
         with tf.variable_scope('g_ae'):
             #AE to be built is shaped:
             # enc ~ [16384x1, 8192x16, 4096x32, 2048x32, 1024x64, 512x64, 256x128, 128x128, 64x256, 32x256, 16x512, 8x1024]
@@ -182,7 +185,12 @@ class AEGenerator(object):
                     skips.append(h_i)
                 if do_prelu:
                     print('-- Enc: prelu activation --')
-                    h_i = prelu(h_i)
+                    h_i = prelu(h_i, ref=is_ref, name='enc_prelu_{}'.format(layer_idx))
+                    if is_ref:
+                        # split h_i into its components
+                        alpha_i = h_i[1]
+                        h_i = h_i[0]
+                        alphas.append(alpha_i)
                 else:
                     print('-- Enc: leakyrelu activation --')
                     h_i = leakyrelu(h_i)
@@ -209,7 +217,12 @@ class AEGenerator(object):
                 if layer_idx < len(g_dec_depths) - 1:
                     if do_prelu:
                         print('-- Dec: prelu activation --')
-                        h_i = prelu(h_i)
+                        h_i = prelu(h_i, ref=is_ref, name='dec_prelu_{}'.format(layer_idx))
+                        if is_ref:
+                            # split h_i into its components
+                            alpha_i = h_i[1]
+                            h_i = h_i[0]
+                            alphas.append(alpha_i)
                     else:
                         print('-- Dec: leakyrelu activation --')
                         h_i = leakyrelu(h_i)
@@ -224,11 +237,16 @@ class AEGenerator(object):
 
             wave = h_i
             print('Amount of skip connections: ', len(skips))
+            if is_ref and do_prelu:
+                print('Amount of alpha vectors: ', len(alphas))
             segan.gen_wave_summ = histogram_summary('gen_wave', wave)
             print('Last wave shape: ', wave.get_shape())
             print('*************************')
             segan.generator_built = True
+            # ret feats contains the features refs to be returned
+            ret_feats = [wave]
             if z_on:
-                return wave, z
-            else:
-                return wave
+                ret_feats.append(z)
+            if is_ref and do_prelu:
+                ret_feats += alphas
+            return ret_feats

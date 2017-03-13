@@ -28,19 +28,24 @@ class Model(object):
                         os.path.join(save_path, model_name),
                         global_step=step)
 
-    def load(self, save_path):
+    def load(self, save_path, model_file=None):
         if not os.path.exists(save_path):
             print('[!] Checkpoints path does not exist...')
             return False
         print('[*] Reading checkpoints...')
-        ckpt = tf.train.get_checkpoint_state(save_path)
-        if ckpt and ckpt.model_checkpoint_path:
-            ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
-            self.saver.restore(self.sess, os.path.join(save_path, ckpt_name))
-            print('[*] Read {}'.format(ckpt_name))
-            return True
+        if model_file is None:
+            ckpt = tf.train.get_checkpoint_state(save_path)
+            if ckpt and ckpt.model_checkpoint_path:
+                ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
+            else:
+                return False
         else:
-            return False
+            ckpt_name = model_file
+        if not hasattr(self, 'saver'):
+            self.saver = tf.train.Saver()
+        self.saver.restore(self.sess, os.path.join(save_path, ckpt_name))
+        print('[*] Read {}'.format(ckpt_name))
+        return True
 
 
 
@@ -80,7 +85,7 @@ class SEGAN(Model):
         self.g_dilated_blocks = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
         self.g_enc_depths = [16, 32, 32, 64, 64, 128, 128, 256, 256, 512, 1024]
         # TODO: Define D fmaps
-        self.d_num_fmaps = [64, 64, 64, 32, 32, 32, 16, 16, 8]
+        self.d_num_fmaps = [16, 32, 32, 64, 64, 128, 128, 256, 256, 512, 1024]
         #self.g_num_fmaps = [1, 1, 1, 1, 1, 1, 1]
         #self.d_num_fmaps = self.num_fmaps[::-1]
         self.init_noise_std = args.init_noise_std
@@ -95,6 +100,8 @@ class SEGAN(Model):
         self.deactivated_l1 = False
         # define the functions
         self.discriminator = discriminator
+        # register G non linearity
+        self.g_nl = args.g_nl
         if args.g_type == 'ae':
             self.generator = AEGenerator(self)
         elif args.g_type == 'dwave':
@@ -158,12 +165,27 @@ class SEGAN(Model):
         # add channels dimension to manipulate in D and G
         wavbatch = tf.expand_dims(wavbatch, -1)
         noisybatch = tf.expand_dims(noisybatch, -1)
+        # by default leaky relu is used
+        do_prelu = False
+        if self.g_nl == 'prelu':
+            do_prelu = True
         if gpu_idx == 0:
             #self.sample_wavs = tf.placeholder(tf.float32, [self.batch_size,
             #                                               self.canvas_size],
             #                                  name='sample_wavs')
-            self.reference_G, self.ref_z  = self.generator(noisybatch, is_ref=True,
-                                                           spk=None)
+            ref_Gs = self.generator(noisybatch, is_ref=True,
+                                    spk=None,
+                                    do_prelu=do_prelu)
+            print('num of G returned: ', len(ref_Gs))
+            self.reference_G = ref_Gs[0]
+            self.ref_z = ref_Gs[1]
+            if do_prelu:
+                self.ref_alpha = ref_Gs[2:]
+                self.alpha_summ = []
+                for m, ref_alpha in enumerate(self.ref_alpha):
+                    # add a summary per alpha
+                    self.alpha_summ.append(histogram_summary('alpha_{}'.format(m),
+                                                             ref_alpha))
             # make a dummy copy of discriminator to have variables and then
             # be able to set up the variable reuse for all other devices
             #dummy_joint = tf.concat(0, [wavbatch, wavbatch, self.reference_G])
@@ -175,7 +197,8 @@ class SEGAN(Model):
                                   None,
                                   reuse=False)
 
-        G, z  = self.generator(noisybatch, is_ref=False, spk=None)
+        G, z  = self.generator(noisybatch, is_ref=False, spk=None,
+                               do_prelu=do_prelu)
         print('G shape: ', G.get_shape())
         self.Gs.append(G)
         self.zs.append(z)
@@ -303,15 +326,19 @@ class SEGAN(Model):
         print('Initializing variables...')
         self.sess.run(init)
         self.saver = tf.train.Saver()
-        self.g_sum = tf.summary.merge([self.d_fk_sum,
-                                       #self.d_nfk_sum,
-                                       self.d_fk_loss_sum,
-                                       #self.d_nfk_loss_sum,
-                                       self.g_loss_sum,
-                                       self.g_loss_l1_sum,
-                                       self.g_loss_adv_sum,
-                                       self.gen_summ,
-                                       self.gen_audio_summ])
+        g_summs = [self.d_fk_sum,
+                   #self.d_nfk_sum,
+                   self.d_fk_loss_sum,
+                   #self.d_nfk_loss_sum,
+                   self.g_loss_sum,
+                   self.g_loss_l1_sum,
+                   self.g_loss_adv_sum,
+                   self.gen_summ,
+                   self.gen_audio_summ]
+        # if we have prelus, add them to summary
+        if hasattr(self, 'alpha_summ'):
+            g_summs += self.alpha_summ
+        self.g_sum = tf.summary.merge(g_summs)
         self.d_sum = tf.summary.merge([self.d_loss_sum,
                                        self.d_rl_sum,
                                        self.d_rl_loss_sum,
@@ -480,6 +507,34 @@ class SEGAN(Model):
         finally:
             coord.request_stop()
         coord.join(threads)
+
+    def clean(self, x):
+        """ clean a utterance x
+            x: numpy array containing the normalized noisy waveform
+        """
+        c_res = None
+        for beg_i in range(0, x.shape[0], 2 ** 14):
+            if x.shape[0] - beg_i  < 2 ** 14:
+                length = x.shape[0] - beg_i
+                pad = (2 ** 14) - length
+            else:
+                length = 2 ** 14
+                pad = 0
+            x_ = np.zeros((self.batch_size, 2 ** 14))
+            if pad > 0:
+                x_[0] = np.concatenate((x[beg_i:beg_i + length], np.zeros(pad)))
+            else:
+                x_[0] = x[beg_i:beg_i + length]
+            print('Cleaning chunk {} -> {}'.format(beg_i, beg_i + length))
+            fdict = {self.gtruth_noisy[0]:x_}
+            canvas_w = self.sess.run(self.Gs[0],
+                                     feed_dict=fdict)[0]
+            print('canvas w shape: ', canvas_w.shape)
+            if c_res is None:
+                c_res = canvas_w.reshape((2 ** 14,))
+            else:
+                c_res = np.concatenate((c_res, canvas_w.reshape((2 ** 14,))))
+        return c_res
 
 
 class SEAE(Model):

@@ -39,6 +39,13 @@ def histogram_summary(name, x):
         summ = tf.histogram_summary(name, x)
     return summ
 
+def tensor_summary(name, x):
+    try:
+        summ = tf.summary.tensor_summary(name, x)
+    except AttributeError:
+        summ = tf.tensor_summary(name, x)
+    return summ
+
 def audio_summary(name, x, sampling_rate=16e3):
     try:
         summ = tf.summary.audio(name, x, sampling_rate)

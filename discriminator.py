@@ -65,8 +65,7 @@ def discriminator(self, wave_in, spk=None, reuse=False):
                                  init=tf.truncated_normal_initializer(stddev=0.02),
                                  name='logits_conv')
             d_logit_out = tf.squeeze(d_logit_out)
-            d_logit_out = fully_connected(d_logit_out, 1, activation_fn=None,
-                                            )
+            d_logit_out = fully_connected(d_logit_out, 1, activation_fn=None)
             print('discriminator output shape: ', d_logit_out.get_shape())
             print('*****************************')
             return d_logit_out

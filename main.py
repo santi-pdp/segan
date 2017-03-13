@@ -4,6 +4,7 @@ import numpy as np
 from model import SEGAN, SEAE
 import os
 from tensorflow.python.client import device_lib
+from scipy.io import wavfile
 
 
 devices = device_lib.list_local_devices()
@@ -29,6 +30,7 @@ flags.DEFINE_integer("z_depth", 256, "Depth of input noise to G (Def: 256).")
 flags.DEFINE_string("save_path", "segan_results", "Path to save out model "
                                                    "files. (Def: dwavegan_model"
                                                    ").")
+flags.DEFINE_string("g_nl", "leaky", "Type of nonlinearity in G: leaky or prelu. (Def: leaky).")
 flags.DEFINE_string("model", "gan", "Type of model to train: gan or ae. (Def: gan).")
 flags.DEFINE_string("g_type", "ae", "Type of G to use: ae or dwave. (Def: ae).")
 flags.DEFINE_float("g_learning_rate", 0.0002, "G learning_rate (Def: 0.0002)")
@@ -41,6 +43,9 @@ flags.DEFINE_string("synthesis_path", "dwavegan_samples", "Path to save output"
 flags.DEFINE_string("e2e_dataset", "data/segan.tfrecords", "TFRecords"
                                                           " (Def: data/"
                                                           "segan.tfrecords.")
+flags.DEFINE_string("save_clean_path", "test_clean_results", "Path to save clean utts")
+flags.DEFINE_string("test_wav", None, "name of test wav (it won't train)")
+flags.DEFINE_string("weights", None, "Weights file")
 FLAGS = flags.FLAGS
 
 
@@ -73,7 +78,26 @@ def main(_):
             se_model = SEAE(sess, FLAGS, udevices)
         else:
             raise ValueError('{} model type not understood!'.format(FLAGS.model))
-        se_model.train(FLAGS, udevices)
+        if FLAGS.test_wav is None:
+            #se_model.train(FLAGS, udevices)
+            pass
+        else:
+            if FLAGS.weights is None:
+                raise ValueError('weights must be specified!')
+            print('Loading model weights...')
+            se_model.load(FLAGS.save_path, FLAGS.weights)
+            fm, wav_data = wavfile.read(FLAGS.test_wav)
+            wavname = FLAGS.test_wav.split('/')[-1]
+            if fm != 16000:
+                raise ValueError('16kHz required! Test file is different')
+            wave = (2./65535.) * (wav_data.astype(np.float32) - 32767) + 1.
+            print('test wave shape: ', wave.shape)
+            print('test wave min:{}  max:{}'.format(np.min(wave), np.max(wave)))
+            c_wave = se_model.clean(wave)
+            print('c wave min:{}  max:{}'.format(np.min(c_wave), np.max(c_wave)))
+            wavfile.write(os.path.join(FLAGS.save_clean_path, wavname), 16e3, c_wave)
+            print('Done cleaning {}'.format(FLAGS.test_wav))
+
 
 if __name__ == '__main__':
     tf.app.run()
