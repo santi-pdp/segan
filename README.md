@@ -15,6 +15,9 @@ Then run the execution of the SEGAN training with:
 python main.py
 ```
 
-## Author
+## Authors
 
-Santi Pdp ( [@santty128](https://twitter.com/santty128) )
+Santiago Pascual, Antonio Bonafonte, Joan Serrà
+
+##### Contact mail
+santi.pascual@upc.edu
