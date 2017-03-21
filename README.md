@@ -1,6 +1,8 @@
 # Speech Enhancement Generative Adversarial Network
 
 
+**Doc under construction. To be finished soon...**
+
 First, make the TFRecords dataset by running:
 
 ```
