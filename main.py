@@ -79,8 +79,7 @@ def main(_):
         else:
             raise ValueError('{} model type not understood!'.format(FLAGS.model))
         if FLAGS.test_wav is None:
-            #se_model.train(FLAGS, udevices)
-            pass
+            se_model.train(FLAGS, udevices)
         else:
             if FLAGS.weights is None:
                 raise ValueError('weights must be specified!')
