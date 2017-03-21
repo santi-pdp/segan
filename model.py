@@ -529,11 +529,16 @@ class SEGAN(Model):
             fdict = {self.gtruth_noisy[0]:x_}
             canvas_w = self.sess.run(self.Gs[0],
                                      feed_dict=fdict)[0]
+            canvas_w = canvas_w.reshape((2 ** 14))
             print('canvas w shape: ', canvas_w.shape)
+            if pad > 0:
+                print('Removing padding of {} samples'.format(pad))
+                # get rid of last padded samples
+                canvas_w = canvas_w[:-pad]
             if c_res is None:
-                c_res = canvas_w.reshape((2 ** 14,))
+                c_res = canvas_w
             else:
-                c_res = np.concatenate((c_res, canvas_w.reshape((2 ** 14,))))
+                c_res = np.concatenate((c_res, canvas_w))
         return c_res
 
 
