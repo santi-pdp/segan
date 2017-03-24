@@ -116,7 +116,7 @@ def main(opts):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Convert the set of txt and '
                                                  'wavs to TFRecords')
-    parser.add_argument('--cfg', type=str, default='e2e_maker.cfg',
+    parser.add_argument('--cfg', type=str, default='cfg/e2e_maker.cfg',
                         help='File containing the description of datasets '
                              'to extract the info to make the TFRecords.')
     parser.add_argument('--save_path', type=str, default='data/',
