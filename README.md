@@ -28,7 +28,9 @@ Once you have the TFRecords file created in `data/segan.tfrecords` you can simpl
 
 By default this will take all the available GPUs in your system, if any. Otherwise it will just take the CPU.
 
+### Loading model and prediction
 
+**Doc under construction [ ! ]**
 
 ## Authors
 
