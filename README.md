@@ -1,3 +1,5 @@
+<h1>SEGAN</h1>
+
 # Speech Enhancement Generative Adversarial Network
 
 This is the repository of the SEGAN project. A Generative Adversarial approach has been taken to do speech enhancement (i.e. removing noise from corrupted speech signal) with a fully convolutional architecture schematized as follows:
