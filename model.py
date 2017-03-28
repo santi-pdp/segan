@@ -23,7 +23,8 @@ class Model(object):
         model_name = 'WWaveGAN'
         if not os.path.exists(save_path):
             os.makedirs(save_path)
-
+        if not hasattr(self, 'saver'):
+            self.saver = tf.train.Saver()
         self.saver.save(self.sess,
                         os.path.join(save_path, model_name),
                         global_step=step)
@@ -325,7 +326,6 @@ class SEGAN(Model):
 
         print('Initializing variables...')
         self.sess.run(init)
-        self.saver = tf.train.Saver()
         g_summs = [self.d_fk_sum,
                    #self.d_nfk_sum,
                    self.d_fk_loss_sum,
