@@ -3,7 +3,6 @@ import tensorflow as tf
 from tensorflow.contrib.layers import batch_norm, fully_connected, flatten
 from tensorflow.contrib.layers import xavier_initializer
 from ops import *
-from qrnn import QRNN_layer
 import numpy as np
 
 
