@@ -19,11 +19,15 @@ import os
 
 class Model(object):
 
+    def __init__(self, name='BaseModel'):
+        self.name = name
+
     def save(self, save_path, step):
-        model_name = 'WWaveGAN'
+        model_name = self.name
         if not os.path.exists(save_path):
             os.makedirs(save_path)
-
+        if not hasattr(self, 'saver'):
+            self.saver = tf.train.Saver()
         self.saver.save(self.sess,
                         os.path.join(save_path, model_name),
                         global_step=step)
@@ -51,7 +55,8 @@ class Model(object):
 
 class SEGAN(Model):
     """ Speech Enhancement Generative Adversarial Network """
-    def __init__(self, sess, args, devices, infer=False):
+    def __init__(self, sess, args, devices, infer=False, name='SEGAN'):
+        super(SEGAN, self).__init__(name)
         self.args = args
         self.sess = sess
         self.keep_prob = 1.
@@ -275,8 +280,15 @@ class SEGAN(Model):
 
     def get_vars(self):
         t_vars = tf.trainable_variables()
-        self.d_vars = [var for var in t_vars if var.name.startswith('d_')]
-        self.g_vars = [var for var in t_vars if var.name.startswith('g_')]
+        self.d_vars_dict = {}
+        self.g_vars_dict = {}
+        for var in t_vars:
+            if var.name.startswith('d_'):
+                self.d_vars_dict[var.name] = var
+            if var.name.startswith('g_'):
+                self.g_vars_dict[var.name] = var
+        self.d_vars = self.d_vars_dict.values()
+        self.g_vars = self.g_vars_dict.values()
         for x in self.d_vars:
             assert x not in self.g_vars
         for x in self.g_vars:
@@ -325,7 +337,6 @@ class SEGAN(Model):
 
         print('Initializing variables...')
         self.sess.run(init)
-        self.saver = tf.train.Saver()
         g_summs = [self.d_fk_sum,
                    #self.d_nfk_sum,
                    self.d_fk_loss_sum,
