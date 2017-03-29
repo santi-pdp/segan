@@ -59,21 +59,6 @@ def minmax_normalize(x, x_min, x_max, o_min=-1., o_max=1.):
 def minmax_denormalize(x, x_min, x_max, o_min=-1., o_max=1.):
     return minmax_normalize(x, o_min, o_max, x_min, x_max)
 
-def linear(input_, output_size, scope=None,
-           bias_init=0.0, with_w=False):
-    shape = input_.get_shape().as_list()
-
-    with tf.variable_scope(scope or "Linear"):
-        matrix = tf.get_variable("Matrix", [shape[1], output_size], tf.float32,
-                                 xavier_initializer(uniform=False))
-        bias = tf.get_variable("bias", [output_size],
-            initializer=tf.constant_initializer(bias_init))
-        if with_w:
-            return tf.matmul(input_, matrix) + bias, matrix, bias
-        else:
-            return tf.matmul(input_, matrix) + bias
-
-
 def downconv(x, output_dim, kwidth=5, pool=2, init=None, uniform=False,
              bias_init=None, name='downconv'):
     """ Downsampled convolution 1d """
@@ -326,25 +311,3 @@ def average_gradients(tower_grads):
         grad_and_var = (grad, v)
         average_grads.append(grad_and_var)
     return average_grads
-
-def sigmoid_kl_with_logits(logits, targets):
-    # broadcasts the same target value across the whole batch
-    # this is implemented so awkwardly because tensorflow lacks an x log x op
-    assert isinstance(targets, float)
-    if targets in [0., 1.]:
-        entropy = 0.
-    else:
-        entropy = - targets * np.log(targets) - (1. - targets) * np.log(1. - targets)
-    return tf.nn.sigmoid_cross_entropy_with_logits(logits, tf.ones_like(logits) * targets) - entropy
-
-def sample_fake_chars(chars, curr_idx, batch_size):
-    """ Pick a batch of random chars which are not current ones """
-    # get pickable chars and build tensor
-    pidxes = [idx for idx in range(chars.shape[0]) if idx < curr_idx or idx > (curr_idx + batch_size)]
-    pidxes = np.array(pidxes)
-    pickable_chars = chars[pidxes]
-    # pick batch_size samples randomly
-    selected_chunk = pickable_chars[np.random.choice(pickable_chars.shape[0],
-                                                     batch_size,
-                                                     replace=False), :]
-    return selected_chunk
