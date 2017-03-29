@@ -2,7 +2,9 @@
 
 ### Introduction
 
-This is the repository of the SEGAN project, and our original paper can be found [here](https://arxiv.org/abs/1703.09452). In this work a Generative Adversarial approach has been taken to do speech enhancement (i.e. removing noise from corrupted speech signals) with a fully convolutional architecture schematized as follows:
+This is the repository of the SEGAN project, and our original paper can be found [here](https://arxiv.org/abs/1703.09452).
+
+In this work a Generative Adversarial approach has been taken to do speech enhancement (i.e. removing noise from corrupted speech signals) with a fully convolutional architecture schematized as follows:
 
 ![SEGAN_G](assets/segan_g.png)
 
@@ -42,7 +44,7 @@ By default this will take all the available GPUs in your system, if any. Otherwi
 
 ### Loading model and prediction
 
-First, the trained weights will have to be downloaded. **TODO: link will be added soon!**
+First, the trained weights will have to be downloaded from [here](https://drive.google.com/open?id=0B6xY-R8JAa8rcGRld1dreGl1RlE).
 
 Then the `main.py` script has the option to process a wav file through the G network (inference mode), where the user MUST specify the trained weights file and the configuration of the trained network. In the case of the v1 SEGAN presented in the paper, the options would be:
 
