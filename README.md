@@ -1,6 +1,6 @@
-# SEGAN: Speech Enhancement Generative Adversarial Network
+## SEGAN: Speech Enhancement Generative Adversarial Network
 
-## Introduction
+### Introduction
 
 This is the repository of the SEGAN project. In this work a Generative Adversarial approach has been taken to do speech enhancement (i.e. removing noise from corrupted speech signals) with a fully convolutional architecture schematized as follows:
 
@@ -13,7 +13,7 @@ This model deals with raw speech waveforms on many noise conditions at different
 * [improved-gan](https://github.com/openai/improved-gan): implementing improvements to train GANs in a more stable way
 *  [DCGAN-tensorflow](https://github.com/carpedm20/DCGAN-tensorflow): implementation of the DCGAN in tensorflow
 
-## Data
+### Data
 
 The speech enhancement dataset used in this work [(Valentini et al. 2016)](http://ssw9.net/papers/ssw9_PS2-4_Valentini-Botinhao.pdf) can be found in [Edinburgh DataShare](http://datashare.is.ed.ac.uk/handle/10283/1942). However, **the following script downloads and prepares the data for TensorFlow format**:
 
@@ -56,7 +56,7 @@ To make things easy, there is a bash script called `clean_wav.sh` that accepts a
 the save path.
 
 
-## Authors
+### Authors
 
 * **Santiago Pascual** (TALP-UPC, BarcelonaTech)
 * **Antonio Bonafonte** (TALP-UPC, BarcelonaTech)
