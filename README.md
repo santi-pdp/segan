@@ -2,7 +2,7 @@
 
 ### Introduction
 
-This is the repository of the SEGAN project. In this work a Generative Adversarial approach has been taken to do speech enhancement (i.e. removing noise from corrupted speech signals) with a fully convolutional architecture schematized as follows:
+This is the repository of the SEGAN project, and our original paper can be found [here](https://arxiv.org/abs/1703.09452). In this work a Generative Adversarial approach has been taken to do speech enhancement (i.e. removing noise from corrupted speech signals) with a fully convolutional architecture schematized as follows:
 
 ![SEGAN_G](assets/segan_g.png)
 
