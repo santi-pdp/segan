@@ -20,7 +20,6 @@ def discriminator(self, wave_in, spk=None, reuse=False):
             raise ValueError('Discriminator input must be 2-D or 3-D')
 
         batch_size = int(wave_in.get_shape()[0])
-        # assert batch_size == 3 * self.batch_size
 
         # set up the disc_block function
         with tf.variable_scope('d_model') as scope:
@@ -29,21 +28,27 @@ def discriminator(self, wave_in, spk=None, reuse=False):
             def disc_block(block_idx, input_, kwidth, nfmaps, bnorm, activation,
                            pooling=2):
                 with tf.variable_scope('d_block_{}'.format(block_idx)):
-                    print('D block {} input shape: {}'
-                          ''.format(block_idx, input_.get_shape()), end=' *** ')
+                    if not reuse:
+                        print('D block {} input shape: {}'
+                              ''.format(block_idx, input_.get_shape()),
+                              end=' *** ')
                     downconv_init = tf.truncated_normal_initializer(stddev=0.02)
                     hi_a = downconv(input_, nfmaps, kwidth=kwidth, pool=pooling,
                                     init=downconv_init)
-                    print('downconved shape: {} '
-                          ''.format(hi_a.get_shape()), end=' *** ')
+                    if not reuse:
+                        print('downconved shape: {} '
+                              ''.format(hi_a.get_shape()), end=' *** ')
                     if bnorm:
-                        print('Applying VBN', end=' *** ')
+                        if not reuse:
+                            print('Applying VBN', end=' *** ')
                         hi_a = self.vbn(hi_a, 'd_vbn_{}'.format(block_idx))
                     if activation == 'leakyrelu':
-                        print('Applying Lrelu', end=' *** ')
+                        if not reuse:
+                            print('Applying Lrelu', end=' *** ')
                         hi = leakyrelu(hi_a)
                     elif activation == 'relu':
-                        print('Applying Relu', end=' *** ')
+                        if not reuse:
+                            print('Applying Relu', end=' *** ')
                         hi = tf.nn.relu(hi_a)
                     else:
                         raise ValueError('Unrecognized activation {} '
@@ -52,13 +57,16 @@ def discriminator(self, wave_in, spk=None, reuse=False):
             beg_size = self.canvas_size
             # apply input noisy layer to real and fake samples
             hi = gaussian_noise_layer(hi, self.disc_noise_std)
-            print('*** Discriminator summary ***')
+            if not reuse:
+                print('*** Discriminator summary ***')
             for block_idx, fmaps in enumerate(self.d_num_fmaps):
                 hi = disc_block(block_idx, hi, 31,
                                 self.d_num_fmaps[block_idx],
                                 True, 'leakyrelu')
-                print()
-            print('discriminator deconved shape: ', hi.get_shape())
+                if not reuse:
+                    print()
+            if not reuse:
+                print('discriminator deconved shape: ', hi.get_shape())
             hi_f = flatten(hi)
             #hi_f = tf.nn.dropout(hi_f, self.keep_prob_var)
             d_logit_out = conv1d(hi, kwidth=1, num_kernels=1,
@@ -66,6 +74,7 @@ def discriminator(self, wave_in, spk=None, reuse=False):
                                  name='logits_conv')
             d_logit_out = tf.squeeze(d_logit_out)
             d_logit_out = fully_connected(d_logit_out, 1, activation_fn=None)
-            print('discriminator output shape: ', d_logit_out.get_shape())
-            print('*****************************')
+            if not reuse:
+                print('discriminator output shape: ', d_logit_out.get_shape())
+                print('*****************************')
             return d_logit_out

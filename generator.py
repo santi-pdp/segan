@@ -12,7 +12,6 @@ class Generator(object):
         self.segan = segan
 
     def __call__(self, noisy_w, is_ref, spk=None):
-        # TODO: remove c_vec
         """ Build the graph propagating (noisy_w) --> x
         On first pass will make variables.
         """
@@ -35,31 +34,11 @@ class Generator(object):
                                      name=name, dtype=tf.float32)
             return z
 
-        #z = make_z([segan.batch_size, segan.z_dim])
-
         if hasattr(segan, 'generator_built'):
             tf.get_variable_scope().reuse_variables()
             make_vars = False
         else:
             make_vars = True
-
-        def reuse_wrapper(packed, *args):
-            """ Wrapper that processes the output of TF calls differently
-            based on whether we are reusing variables or not.
-            packed: Output of TF call
-            args: List of names
-
-            If make_vars is True, packed will contain all new variables, and
-            we assign them to segan.<field> fields.
-            If make_vars is False, packed is just the output tensor, and we
-            only return it.
-            """
-            if make_vars:
-                assert len(packed) == len(args) + 1, len(packed)
-                out = packed[0]
-            else:
-                out = packed
-            return out
 
         print('*** Building Generator ***')
         in_dims = noisy_w.get_shape().as_list()
@@ -151,8 +130,8 @@ class AEGenerator(object):
             make_vars = False
         else:
             make_vars = True
-
-        print('*** Building Generator ***')
+        if is_ref:
+            print('*** Building Generator ***')
         in_dims = noisy_w.get_shape().as_list()
         h_i = noisy_w
         if len(in_dims) == 2:
@@ -174,16 +153,20 @@ class AEGenerator(object):
                 h_i_dwn = downconv(h_i, layer_depth, kwidth=kwidth,
                                    init=tf.truncated_normal_initializer(stddev=0.02),
                                    name='enc_{}'.format(layer_idx))
-                print('Downconv {} -> {}'.format(h_i.get_shape(),
-                                                 h_i_dwn.get_shape()))
+                if is_ref:
+                    print('Downconv {} -> {}'.format(h_i.get_shape(),
+                                                     h_i_dwn.get_shape()))
                 h_i = h_i_dwn
                 if layer_idx < len(segan.g_enc_depths) - 1:
-                    print('Adding skip connection downconv {}'.format(layer_idx))
+                    if is_ref:
+                        print('Adding skip connection downconv '
+                              '{}'.format(layer_idx))
                     # store skip connection
                     # last one is not stored cause it's the code
                     skips.append(h_i)
                 if do_prelu:
-                    print('-- Enc: prelu activation --')
+                    if is_ref:
+                        print('-- Enc: prelu activation --')
                     h_i = prelu(h_i, ref=is_ref, name='enc_prelu_{}'.format(layer_idx))
                     if is_ref:
                         # split h_i into its components
@@ -191,7 +174,8 @@ class AEGenerator(object):
                         h_i = h_i[0]
                         alphas.append(alpha_i)
                 else:
-                    print('-- Enc: leakyrelu activation --')
+                    if is_ref:
+                        print('-- Enc: leakyrelu activation --')
                     h_i = leakyrelu(h_i)
 
             if z_on:
@@ -202,7 +186,8 @@ class AEGenerator(object):
 
             #SECOND DECODER (reverse order)
             g_dec_depths = segan.g_enc_depths[:-1][::-1] + [1]
-            print('g_dec_depths: ', g_dec_depths)
+            if is_ref:
+                print('g_dec_depths: ', g_dec_depths)
             for layer_idx, layer_depth in enumerate(g_dec_depths):
                 h_i_dim = h_i.get_shape().as_list()
                 out_shape = [h_i_dim[0], h_i_dim[1] * 2, layer_depth]
@@ -210,37 +195,45 @@ class AEGenerator(object):
                 h_i_dcv = deconv(h_i, out_shape, kwidth=kwidth, dilation=2,
                                  init=tf.truncated_normal_initializer(stddev=0.02),
                                  name='dec_{}'.format(layer_idx))
-                print('Deconv {} -> {}'.format(h_i.get_shape(),
-                                               h_i_dcv.get_shape()))
+                if is_ref:
+                    print('Deconv {} -> {}'.format(h_i.get_shape(),
+                                                   h_i_dcv.get_shape()))
                 h_i = h_i_dcv
                 if layer_idx < len(g_dec_depths) - 1:
                     if do_prelu:
-                        print('-- Dec: prelu activation --')
-                        h_i = prelu(h_i, ref=is_ref, name='dec_prelu_{}'.format(layer_idx))
+                        if is_ref:
+                            print('-- Dec: prelu activation --')
+                        h_i = prelu(h_i, ref=is_ref,
+                                    name='dec_prelu_{}'.format(layer_idx))
                         if is_ref:
                             # split h_i into its components
                             alpha_i = h_i[1]
                             h_i = h_i[0]
                             alphas.append(alpha_i)
                     else:
-                        print('-- Dec: leakyrelu activation --')
+                        if is_ref:
+                            print('-- Dec: leakyrelu activation --')
                         h_i = leakyrelu(h_i)
                     # fuse skip connection
                     skip_ = skips[-(layer_idx + 1)]
-                    print('Fusing skip connection of shape {}'.format(skip_.get_shape()))
+                    if is_ref:
+                        print('Fusing skip connection of '
+                              'shape {}'.format(skip_.get_shape()))
                     h_i = tf.concat(2, [h_i, skip_])
 
                 else:
-                    print('-- Dec: tanh activation --')
+                    if is_ref:
+                        print('-- Dec: tanh activation --')
                     h_i = tf.tanh(h_i)
 
             wave = h_i
-            print('Amount of skip connections: ', len(skips))
             if is_ref and do_prelu:
                 print('Amount of alpha vectors: ', len(alphas))
             segan.gen_wave_summ = histogram_summary('gen_wave', wave)
-            print('Last wave shape: ', wave.get_shape())
-            print('*************************')
+            if is_ref:
+                print('Amount of skip connections: ', len(skips))
+                print('Last wave shape: ', wave.get_shape())
+                print('*************************')
             segan.generator_built = True
             # ret feats contains the features refs to be returned
             ret_feats = [wave]
