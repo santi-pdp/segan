@@ -95,7 +95,9 @@ def main(_):
             c_wave = se_model.clean(wave)
             print('c wave min:{}  max:{}'.format(np.min(c_wave), np.max(c_wave)))
             wavfile.write(os.path.join(FLAGS.save_clean_path, wavname), 16e3, c_wave)
-            print('Done cleaning {}'.format(FLAGS.test_wav))
+            print('Done cleaning {} and saved '
+                  'to {}'.format(FLAGS.test_wav,
+                                 os.path.join(FLAGS.save_clean_path, wavname)))
 
 
 if __name__ == '__main__':
