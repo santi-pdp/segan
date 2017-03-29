@@ -69,10 +69,6 @@ class SEGAN(Model):
         self.epoch = args.epoch
         self.d_label_smooth = args.d_label_smooth
         self.devices = devices
-        # read statistics for normalization
-        #with gzip.open(args.stats_file) as gh:
-        #    self.stats = pickle.load(gh)
-        # TODO: include noise vector in input?
         self.z_dim = args.z_dim
         self.z_depth = args.z_depth
         # clip D values
@@ -86,19 +82,17 @@ class SEGAN(Model):
         # canvas size
         self.canvas_size = args.canvas_size
         self.deactivated_noise = False
-        #num of fmaps per block (1, 2, .., 1024)
+        # dilation factors per layer (only in atrous conv G config)
         self.g_dilated_blocks = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+        # num fmaps for AutoEncoder SEGAN (v1)
         self.g_enc_depths = [16, 32, 32, 64, 64, 128, 128, 256, 256, 512, 1024]
-        # TODO: Define D fmaps
+        # Define D fmaps
         self.d_num_fmaps = [16, 32, 32, 64, 64, 128, 128, 256, 256, 512, 1024]
-        #self.g_num_fmaps = [1, 1, 1, 1, 1, 1, 1]
-        #self.d_num_fmaps = self.num_fmaps[::-1]
         self.init_noise_std = args.init_noise_std
         self.disc_noise_std = tf.Variable(self.init_noise_std, trainable=False)
         self.disc_noise_std_summ = scalar_summary('disc_noise_std',
                                                   self.disc_noise_std)
         self.e2e_dataset = args.e2e_dataset
-        # TODO: make get rid of the supervised loss?
         # G's supervised loss weight
         self.l1_weight = args.init_l1_weight
         self.l1_lambda = tf.Variable(self.l1_weight, trainable=False)
