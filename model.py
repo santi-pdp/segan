@@ -3,17 +3,13 @@ import tensorflow as tf
 from tensorflow.contrib.layers import batch_norm, fully_connected, flatten
 from tensorflow.contrib.layers import xavier_initializer
 from scipy.io import wavfile
-import gzip
-import cPickle as pickle
 from generator import *
 from discriminator import *
 import numpy as np
 from data_loader import read_and_decode
 from bnorm import VBN
 from ops import *
-import json
 import timeit
-import h5py
 import os
 
 
