@@ -4,7 +4,7 @@ import tensorflow as tf
 class VBN(object):
     """
     Virtual Batch Normalization
-    (https://github.com/openai/improved-gan/blob/master/imagenet/model.py)
+    (modified from https://github.com/openai/improved-gan/ definition)
     """
 
     def __init__(self, x, name, epsilon=1e-5):
