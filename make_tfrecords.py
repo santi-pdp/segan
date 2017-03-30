@@ -3,10 +3,7 @@ import tensorflow as tf
 import numpy as np
 from collections import namedtuple, OrderedDict
 from subprocess import call
-import cPickle as pickle
 import scipy.io.wavfile as wavfile
-import gzip
-import h5py
 import argparse
 import codecs
 import timeit
