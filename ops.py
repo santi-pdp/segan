@@ -148,7 +148,7 @@ def time_to_batch(value, dilation, name=None):
         transposed = tf.transpose(reshaped, perm=[1, 0, 2])
         return tf.reshape(transposed, [shape[0] * dilation, -1, shape[2]])
 
-
+# https://github.com/ibab/tensorflow-wavenet/blob/master/wavenet/ops.py
 def batch_to_time(value, dilation, name=None):
     with tf.name_scope('batch_to_time'):
         shape = tf.shape(value)
@@ -266,6 +266,7 @@ def conv2d(input_, output_dim, k_h, k_w, stddev=0.05, name="conv2d", with_w=Fals
         else:
             return conv
 
+# https://github.com/openai/improved-gan/blob/master/imagenet/ops.py
 @contextmanager
 def variables_on_gpu0():
     old_fn = tf.get_variable
@@ -275,7 +276,6 @@ def variables_on_gpu0():
     tf.get_variable = new_fn
     yield
     tf.get_variable = old_fn
-
 
 def average_gradients(tower_grads):
     """ Calculate the average gradient for each shared variable across towers.
