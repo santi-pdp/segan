@@ -183,13 +183,9 @@ class SEGAN(Model):
                                                              ref_alpha))
             # make a dummy copy of discriminator to have variables and then
             # be able to set up the variable reuse for all other devices
-            #dummy_joint = tf.concat(0, [wavbatch, wavbatch, self.reference_G])
-            #dummy_words_joint = tf.concat(0, [c_vector, fk_c_vector,
-            #                                  c_vector])
             # merge along channels and this would be a real batch
             dummy_joint = tf.concat(2, [wavbatch, noisybatch])
             dummy = discriminator(self, dummy_joint,
-                                  None,
                                   reuse=False)
 
         G, z  = self.generator(noisybatch, is_ref=False, spk=None,
@@ -197,19 +193,13 @@ class SEGAN(Model):
         self.Gs.append(G)
         self.zs.append(z)
 
-        #joint = tf.concat(0, [wavbatch, wavbatch, G])
-        #joint_words = tf.concat(0, [c_vector, fk_c_vector, c_vector])
         # add new dimension to merge with other pairs
         D_rl_joint = tf.concat(2, [wavbatch, noisybatch])
         D_fk_joint = tf.concat(2, [G, noisybatch])
         # build rl discriminator
         d_rl_logits = discriminator(self, D_rl_joint, reuse=True)
         # build fk G discriminator
-        d_fk_logits = discriminator(self, D_fk_joint, None, reuse=True)
-
-        # build fk noisy discriminator
-        #d_nfk_logits = discriminator(self, (wavbatch - noisybatch), None,
-        #                             reuse=True)
+        d_fk_logits = discriminator(self, D_fk_joint, reuse=True)
 
         # make disc variables summaries
         self.d_rl_sum = histogram_summary("d_real", d_rl_logits)
@@ -310,7 +300,7 @@ class SEGAN(Model):
         return vbn(tensor)
 
     def train(self, config, devices):
-        """ Train the SUGAN """
+        """ Train the SEGAN """
 
         print('Initializing optimizers...')
         # init optimizers
@@ -615,12 +605,6 @@ class SEAE(Model):
             #                                  name='sample_wavs')
             self.reference_G = self.generator(noisybatch, is_ref=True,
                                               spk=None, z_on=False)
-            # make a dummy copy of discriminator to have variables and then
-            # be able to set up the variable reuse for all other devices
-            #dummy_joint = tf.concat(0, [wavbatch, wavbatch, self.reference_G])
-            #dummy_words_joint = tf.concat(0, [c_vector, fk_c_vector,
-            #                                  c_vector])
-            # merge along channels and this would be a real batch
 
         G = self.generator(noisybatch, is_ref=False, spk=None, z_on=False)
         print('GAE shape: ', G.get_shape())
@@ -654,7 +638,7 @@ class SEAE(Model):
         self.all_vars = t_vars
 
     def train(self, config, devices):
-        """ Train the SUGAN """
+        """ Train the SEAE """
 
         print('Initializing optimizer...')
         # init optimizer

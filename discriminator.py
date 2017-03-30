@@ -6,10 +6,9 @@ from ops import *
 import numpy as np
 
 
-def discriminator(self, wave_in, spk=None, reuse=False):
+def discriminator(self, wave_in, reuse=False):
         """
-        w_ins: waveform input
-        spk: input of spk ids? (TODO)
+        wave_in: waveform input
         """
         # take the waveform as input "activation"
         in_dims = wave_in.get_shape().as_list()
