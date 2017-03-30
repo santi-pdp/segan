@@ -15,6 +15,17 @@ This model deals with raw speech waveforms on many noise conditions at different
 * [improved-gan](https://github.com/openai/improved-gan): implementing improvements to train GANs in a more stable way
 *  [DCGAN-tensorflow](https://github.com/carpedm20/DCGAN-tensorflow): implementation of the DCGAN in tensorflow
 
+### Dependencies
+
+* Python 2.7
+* TensorFlow 0.12
+
+You can install the requirements either to your virtualenv or the system via pip with:
+
+```
+pip install -r requirements.txt
+```
+
 ### Data
 
 The speech enhancement dataset used in this work [(Valentini et al. 2016)](http://ssw9.net/papers/ssw9_PS2-4_Valentini-Botinhao.pdf) can be found in [Edinburgh DataShare](http://datashare.is.ed.ac.uk/handle/10283/1942). However, **the following script downloads and prepares the data for TensorFlow format**:
