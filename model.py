@@ -194,7 +194,6 @@ class SEGAN(Model):
 
         G, z  = self.generator(noisybatch, is_ref=False, spk=None,
                                do_prelu=do_prelu)
-        print('G shape: ', G.get_shape())
         self.Gs.append(G)
         self.zs.append(z)
 
@@ -531,6 +530,7 @@ class SEGAN(Model):
             canvas_w = self.sess.run(self.Gs[0],
                                      feed_dict=fdict)[0]
             canvas_w = canvas_w.reshape((2 ** 14))
+            print('canvas w shape: ', canvas_w.shape)
             if pad > 0:
                 print('Removing padding of {} samples'.format(pad))
                 # get rid of last padded samples
