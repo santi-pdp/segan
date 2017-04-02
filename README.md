@@ -52,6 +52,13 @@ By default this will take all the available GPUs in your system, if any. Otherwi
 
 **NOTE:** If you want to specify a subset of GPUs to work on, you can do so with the `CUDA_VISIBLE_DEVICES="0, 1, <etc>"` flag in the python execution within the training script. In the case of having two GPUs they'll be identified as 0 and 1, so we could just take the first GPU with: `CUDA_VISIBLE_DEVICES="0"`.
 
+A sample of G losses is interesting to see as stated in the paper, where L1 follows a minimization with a `100` factor and the adversarial loss gets to be equilibrated with low variance:
+
+**L1 loss (smoothing 0.5)**
+![G_L1](assets/g_l1_loss.png)
+
+**Adversarial loss (smoothing 0.5)**
+![G_ADV](assets/g_adv_loss.png)
 
 ### Loading model and prediction
 
