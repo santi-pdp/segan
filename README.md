@@ -55,9 +55,11 @@ By default this will take all the available GPUs in your system, if any. Otherwi
 A sample of G losses is interesting to see as stated in the paper, where L1 follows a minimization with a `100` factor and the adversarial loss gets to be equilibrated with low variance:
 
 **L1 loss (smoothing 0.5)**
+
 ![G_L1](assets/g_l1_loss.png)
 
 **Adversarial loss (smoothing 0.5)**
+
 ![G_ADV](assets/g_adv_loss.png)
 
 ### Loading model and prediction
