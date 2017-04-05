@@ -746,8 +746,13 @@ class SEAE(Model):
                     curr_epoch += 1
                     # re-set batch idx
                     batch_idx = 0
+                if (counter / num_devices) >= (config.epoch * num_batches - 1):
+                    # done training
+                    print('Done training; epoch limit {} '
+                          'reached.'.format(self.epoch))
+                    break
         except tf.errors.OutOfRangeError:
-            print('Done training; epoch limit {} reached.'.format(self.epoch))
+            print('[!] Reached queues limits in training loop')
         finally:
             coord.request_stop()
         coord.join(threads)
