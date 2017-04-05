@@ -492,6 +492,11 @@ class SEGAN(Model):
                             print('Applying decay {} to noise std {}: {}'.format(decay, self.curr_noise_std, new_noise_std))
                         self.sess.run(tf.assign(self.disc_noise_std, new_noise_std))
                         self.curr_noise_std = new_noise_std
+                if curr_epoch >= config.epoch:
+                    # done training
+                    print('Done training; epoch limit {} '
+                          'reached.'.format(self.epoch))
+                    break
         except tf.errors.OutOfRangeError:
             print('Done training; epoch limit {} reached.'.format(self.epoch))
         finally:
