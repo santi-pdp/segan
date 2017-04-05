@@ -746,7 +746,7 @@ class SEAE(Model):
                     curr_epoch += 1
                     # re-set batch idx
                     batch_idx = 0
-                if (counter / num_devices) >= (config.epoch * num_batches - 1):
+                if curr_epoch >= config.epoch:
                     # done training
                     print('Done training; epoch limit {} '
                           'reached.'.format(self.epoch))
