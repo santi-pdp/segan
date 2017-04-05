@@ -6,7 +6,7 @@ from scipy.io import wavfile
 from generator import *
 from discriminator import *
 import numpy as np
-from data_loader import read_and_decode
+from data_loader import *
 from bnorm import VBN
 from ops import *
 import timeit
@@ -67,6 +67,8 @@ class SEGAN(Model):
         self.devices = devices
         self.z_dim = args.z_dim
         self.z_depth = args.z_depth
+        # preemph factor
+        self.preemph = args.preemph
         # clip D values
         self.d_clip_weights = False
         # apply VBN or regular BN?
@@ -138,7 +140,8 @@ class SEGAN(Model):
             # create the nodes to load for input pipeline
             filename_queue = tf.train.string_input_producer([self.e2e_dataset])
             self.get_wav, self.get_noisy = read_and_decode(filename_queue,
-                                                           2 ** 14)
+                                                           2 ** 14,
+                                                           self.preemph)
         # load the data to input pipeline
         wavbatch, \
         noisybatch = tf.train.shuffle_batch([self.get_wav,
@@ -455,11 +458,11 @@ class SEGAN(Model):
                     sample_dif = sample_wav - sample_noisy
                     for m in range(min(20, canvas_w.shape[0])):
                         print('w{} max: {} min: {}'.format(m, np.max(canvas_w[m]), np.min(canvas_w[m])))
-                        wavfile.write(os.path.join(save_path, 'sample_{}-{}.wav'.format(counter, m)), 16e3, canvas_w[m])
+                        wavfile.write(os.path.join(save_path, 'sample_{}-{}.wav'.format(counter, m)), 16e3, de_emph(canvas_w[m], self.preemph))
                         if not os.path.exists(os.path.join(save_path, 'gtruth_{}.wav'.format(m))):
-                            wavfile.write(os.path.join(save_path, 'gtruth_{}.wav'.format(m)), 16e3, swaves[m])
-                            wavfile.write(os.path.join(save_path, 'noisy_{}.wav'.format(m)), 16e3, sample_noisy[m])
-                            wavfile.write(os.path.join(save_path, 'dif_{}.wav'.format(m)), 16e3, sample_dif[m])
+                            wavfile.write(os.path.join(save_path, 'gtruth_{}.wav'.format(m)), 16e3, de_emph(swaves[m], self.preemph))
+                            wavfile.write(os.path.join(save_path, 'noisy_{}.wav'.format(m)), 16e3, de_emph(sample_noisy[m], self.preemph))
+                            wavfile.write(os.path.join(save_path, 'dif_{}.wav'.format(m)), 16e3, de_emph(sample_dif[m], self.preemph))
                         np.savetxt(os.path.join(save_path, 'd_rl_losses.txt'), d_rl_losses)
                         np.savetxt(os.path.join(save_path, 'd_fk_losses.txt'), d_fk_losses)
                         #np.savetxt(os.path.join(save_path, 'd_nfk_losses.txt'), d_nfk_losses)

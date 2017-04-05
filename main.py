@@ -36,6 +36,7 @@ flags.DEFINE_string("g_type", "ae", "Type of G to use: ae or dwave. (Def: ae).")
 flags.DEFINE_float("g_learning_rate", 0.0002, "G learning_rate (Def: 0.0002)")
 flags.DEFINE_float("d_learning_rate", 0.0002, "D learning_rate (Def: 0.0002)")
 flags.DEFINE_float("beta_1", 0.5, "Adam beta 1 (Def: 0.5)")
+flags.DEFINE_float("preemph", 0.95, "Pre-emph factor (Def: 0.95)")
 flags.DEFINE_string("synthesis_path", "dwavegan_samples", "Path to save output"
                                                           " generated samples."
                                                           " (Def: dwavegan_sam"
