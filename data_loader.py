@@ -13,12 +13,11 @@ def pre_emph(x, coeff=0.95):
 def de_emph(y, coeff=0.95):
     if coeff <= 0:
         return y
-    x0 = y[0]
-    x = [x0]
+    x = np.zeros(y.shape[0], dtype=np.float32)
+    x[0] = y[0]
     for n in range(1, y.shape[0], 1):
-        new_x = coeff * x[n - 1] + y[n]
-        x.append(new_x)
-    return np.array(x, dtype=np.float32)
+        x[n] = coeff * x[n - 1] + y[n]
+    return x
 
 def read_and_decode(filename_queue, canvas_size, preemph=0.):
     reader = tf.TFRecordReader()
