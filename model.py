@@ -6,7 +6,7 @@ from scipy.io import wavfile
 from generator import *
 from discriminator import *
 import numpy as np
-from data_loader import *
+from data_loader import read_and_decode, de_emph
 from bnorm import VBN
 from ops import *
 import timeit
@@ -67,8 +67,6 @@ class SEGAN(Model):
         self.devices = devices
         self.z_dim = args.z_dim
         self.z_depth = args.z_depth
-        # preemph factor
-        self.preemph = args.preemph
         # clip D values
         self.d_clip_weights = False
         # apply VBN or regular BN?
@@ -77,6 +75,8 @@ class SEGAN(Model):
         # num of updates to be applied to D before G
         # this is k in original GAN paper (https://arxiv.org/abs/1406.2661)
         self.disc_updates = 1
+        # set preemph factor
+        self.preemph = preemph
         # canvas size
         self.canvas_size = args.canvas_size
         self.deactivated_noise = False
@@ -457,17 +457,43 @@ class SEGAN(Model):
                     swaves = sample_wav
                     sample_dif = sample_wav - sample_noisy
                     for m in range(min(20, canvas_w.shape[0])):
-                        print('w{} max: {} min: {}'.format(m, np.max(canvas_w[m]), np.min(canvas_w[m])))
-                        wavfile.write(os.path.join(save_path, 'sample_{}-{}.wav'.format(counter, m)), 16e3, de_emph(canvas_w[m], self.preemph))
-                        if not os.path.exists(os.path.join(save_path, 'gtruth_{}.wav'.format(m))):
-                            wavfile.write(os.path.join(save_path, 'gtruth_{}.wav'.format(m)), 16e3, de_emph(swaves[m], self.preemph))
-                            wavfile.write(os.path.join(save_path, 'noisy_{}.wav'.format(m)), 16e3, de_emph(sample_noisy[m], self.preemph))
-                            wavfile.write(os.path.join(save_path, 'dif_{}.wav'.format(m)), 16e3, de_emph(sample_dif[m], self.preemph))
-                        np.savetxt(os.path.join(save_path, 'd_rl_losses.txt'), d_rl_losses)
-                        np.savetxt(os.path.join(save_path, 'd_fk_losses.txt'), d_fk_losses)
-                        #np.savetxt(os.path.join(save_path, 'd_nfk_losses.txt'), d_nfk_losses)
-                        np.savetxt(os.path.join(save_path, 'g_adv_losses.txt'), g_adv_losses)
-                        np.savetxt(os.path.join(save_path, 'g_l1_losses.txt'), g_l1_losses)
+                        print('w{} max: {} min: {}'.format(m,
+                                                           np.max(canvas_w[m]),
+                                                           np.min(canvas_w[m])))
+                        wavfile.write(os.path.join(save_path,
+                                                   'sample_{}-'
+                                                   '{}.wav'.format(counter, m)),
+                                      16e3,
+                                      de_emph(canvas_w[m],
+                                              self.preemph))
+                        m_gtruth_path = os.path.join(save_path, 'gtruth_{}.'
+                                                                'wav'.format(m))
+                        if not os.path.exists(m_gtruth_path):
+                            wavfile.write(os.path.join(save_path,
+                                                       'gtruth_{}.'
+                                                       'wav'.format(m)),
+                                          16e3,
+                                          de_emph(swaves[m],
+                                                  self.preemph))
+                            wavfile.write(os.path.join(save_path,
+                                                       'noisy_{}.'
+                                                       'wav'.format(m)),
+                                          16e3,
+                                          de_emph(sample_noisy[m],
+                                                  self.preemph))
+                            wavfile.write(os.path.join(save_path,
+                                                       'dif_{}.wav'.format(m)),
+                                          16e3,
+                                          de_emph(sample_dif[m],
+                                                  self.preemph))
+                        np.savetxt(os.path.join(save_path, 'd_rl_losses.txt'),
+                                   d_rl_losses)
+                        np.savetxt(os.path.join(save_path, 'd_fk_losses.txt'),
+                                   d_fk_losses)
+                        np.savetxt(os.path.join(save_path, 'g_adv_losses.txt'),
+                                   g_adv_losses)
+                        np.savetxt(os.path.join(save_path, 'g_l1_losses.txt'),
+                                   g_l1_losses)
 
                 if batch_idx >= num_batches:
                     curr_epoch += 1
@@ -495,6 +521,11 @@ class SEGAN(Model):
                             print('Applying decay {} to noise std {}: {}'.format(decay, self.curr_noise_std, new_noise_std))
                         self.sess.run(tf.assign(self.disc_noise_std, new_noise_std))
                         self.curr_noise_std = new_noise_std
+                if curr_epoch >= config.epoch:
+                    # done training
+                    print('Done training; epoch limit {} '
+                          'reached.'.format(self.epoch))
+                    break
         except tf.errors.OutOfRangeError:
             print('Done training; epoch limit {} reached.'.format(self.epoch))
         finally:
@@ -532,6 +563,8 @@ class SEGAN(Model):
                 c_res = canvas_w
             else:
                 c_res = np.concatenate((c_res, canvas_w))
+        # deemphasize
+        c_res = de_emph(c_res, self.preemph)
         return c_res
 
 
@@ -749,8 +782,13 @@ class SEAE(Model):
                     curr_epoch += 1
                     # re-set batch idx
                     batch_idx = 0
+                if curr_epoch >= config.epoch:
+                    # done training
+                    print('Done training; epoch limit {} '
+                          'reached.'.format(self.epoch))
+                    break
         except tf.errors.OutOfRangeError:
-            print('Done training; epoch limit {} reached.'.format(self.epoch))
+            print('[!] Reached queues limits in training loop')
         finally:
             coord.request_stop()
         coord.join(threads)
