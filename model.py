@@ -76,7 +76,7 @@ class SEGAN(Model):
         # this is k in original GAN paper (https://arxiv.org/abs/1406.2661)
         self.disc_updates = 1
         # set preemph factor
-        self.preemph = preemph
+        self.preemph = args.preemph
         if self.preemph > 0:
             print('*** Applying pre-emphasis of {} ***'.format(self.preemph))
         else:
