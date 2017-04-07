@@ -77,6 +77,10 @@ class SEGAN(Model):
         self.disc_updates = 1
         # set preemph factor
         self.preemph = preemph
+        if self.preemph > 0:
+            print('*** Applying pre-emphasis of {} ***'.format(self.preemph))
+        else:
+            print('--- No pre-emphasis applied ---')
         # canvas size
         self.canvas_size = args.canvas_size
         self.deactivated_noise = False
