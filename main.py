@@ -5,6 +5,7 @@ from model import SEGAN, SEAE
 import os
 from tensorflow.python.client import device_lib
 from scipy.io import wavfile
+from data_loader import pre_emph
 
 
 devices = device_lib.list_local_devices()
@@ -49,6 +50,10 @@ flags.DEFINE_string("test_wav", None, "name of test wav (it won't train)")
 flags.DEFINE_string("weights", None, "Weights file")
 FLAGS = flags.FLAGS
 
+def pre_emph_test(coeff, canvas_size):
+    x_ = tf.placeholder(tf.float32, shape=[canvas_size,])
+    x_preemph = pre_emph(x_, coeff)
+    return x_, x_preemph
 
 def main(_):
     print('Parsed arguments: ', FLAGS.__flags)
@@ -91,6 +96,10 @@ def main(_):
             if fm != 16000:
                 raise ValueError('16kHz required! Test file is different')
             wave = (2./65535.) * (wav_data.astype(np.float32) - 32767) + 1.
+            if FLAGS.preemph  > 0:
+                print('preemph test wave with {}'.format(FLAGS.preemph))
+                x_pholder, preemph_op = pre_emph_test(FLAGS.preemph, wave.shape[0])
+                wave = sess.run(preemph_op, feed_dict={x_pholder:wave})
             print('test wave shape: ', wave.shape)
             print('test wave min:{}  max:{}'.format(np.min(wave), np.max(wave)))
             c_wave = se_model.clean(wave)
