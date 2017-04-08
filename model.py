@@ -144,7 +144,7 @@ class SEGAN(Model):
             # create the nodes to load for input pipeline
             filename_queue = tf.train.string_input_producer([self.e2e_dataset])
             self.get_wav, self.get_noisy = read_and_decode(filename_queue,
-                                                           2 ** 14,
+                                                           self.canvas_size,
                                                            self.preemph)
         # load the data to input pipeline
         wavbatch, \
@@ -541,14 +541,14 @@ class SEGAN(Model):
             x: numpy array containing the normalized noisy waveform
         """
         c_res = None
-        for beg_i in range(0, x.shape[0], 2 ** 14):
-            if x.shape[0] - beg_i  < 2 ** 14:
+        for beg_i in range(0, x.shape[0], self.canvas_size):
+            if x.shape[0] - beg_i  < self.canvas_size:
                 length = x.shape[0] - beg_i
-                pad = (2 ** 14) - length
+                pad = (self.canvas_size) - length
             else:
-                length = 2 ** 14
+                length = self.canvas_size
                 pad = 0
-            x_ = np.zeros((self.batch_size, 2 ** 14))
+            x_ = np.zeros((self.batch_size, self.canvas_size))
             if pad > 0:
                 x_[0] = np.concatenate((x[beg_i:beg_i + length], np.zeros(pad)))
             else:
@@ -557,7 +557,7 @@ class SEGAN(Model):
             fdict = {self.gtruth_noisy[0]:x_}
             canvas_w = self.sess.run(self.Gs[0],
                                      feed_dict=fdict)[0]
-            canvas_w = canvas_w.reshape((2 ** 14))
+            canvas_w = canvas_w.reshape((self.canvas_size))
             print('canvas w shape: ', canvas_w.shape)
             if pad > 0:
                 print('Removing padding of {} samples'.format(pad))
