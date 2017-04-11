@@ -2,7 +2,7 @@
 
 ### Introduction
 
-This is the repository of the SEGAN project, and our original paper can be found [here](https://arxiv.org/abs/1703.09452). Also some test samples are available [here](http://veu.talp.cat/segan/).
+This is the repository of the SEGAN project. Our original paper can be found [here](https://arxiv.org/abs/1703.09452), and test samples are available [here](http://veu.talp.cat/segan/).
 
 In this work a Generative Adversarial approach has been taken to do speech enhancement (i.e. removing noise from corrupted speech signals) with a fully convolutional architecture schematized as follows:
 
@@ -77,6 +77,9 @@ CUDA_VISIBLE_DEVICES="" python main.py --init_noise_std 0. --save_path segan_v1 
 To make things easy, there is a bash script called `clean_wav.sh` that accepts as input argument the test filename and
 the save path.
 
+### Current line of work
+
+We have worked on improvements that will be available soon, improving the quality of the enhanced speech.
 
 ### Authors
 
@@ -85,6 +88,5 @@ the save path.
 * **Joan Serrà** (Telefónica Research, Barcelona)
 
 ### Contact
-e-mail: santi.pascual@upc.edu
 
-You can also follow me on Twitter[@santty128](https://twitter.com/santty128)
+e-mail: santi.pascual@upc.edu
