@@ -15,10 +15,15 @@ This model deals with raw speech waveforms on many noise conditions at different
 * [improved-gan](https://github.com/openai/improved-gan): implementing improvements to train GANs in a more stable way
 *  [DCGAN-tensorflow](https://github.com/carpedm20/DCGAN-tensorflow): implementation of the DCGAN in tensorflow
 
-### Dependencies
+### Dependencies-Original
 
 * Python 2.7
 * TensorFlow 0.12
+
+### Dependencies-Forked by kmjeon, 2017-04-23
+
+* Python 3.5.2
+* TensorFlow 1.1.0rc1
 
 You can install the requirements either to your virtualenv or the system via pip with:
 
