@@ -68,7 +68,7 @@ class SEGAN(Model):
         self.z_dim = args.z_dim
         self.z_depth = args.z_depth
         # type of deconv
-        self.deconv_type = deconv_type
+        self.deconv_type = args.deconv_type
         # specify if use biases or not
         self.bias_downconv = args.bias_downconv
         self.bias_deconv = args.bias_deconv
