@@ -20,6 +20,12 @@ flags.DEFINE_integer("denoise_epoch", 5, "Epoch where noise in disc is "
                                           "removed (Def: 5).")
 flags.DEFINE_integer("l1_remove_epoch", 150, "Epoch where L1 in G is "
                                            "removed (Def: 150).")
+flags.DEFINE_boolean("bias_deconv", False,
+                     "Flag to specify if we bias deconvs (Def: False)")
+flags.DEFINE_boolean("bias_downconv", False,
+                     "flag to specify if we bias downconvs (def: false)")
+flags.DEFINE_boolean("bias_D_conv", False,
+                     "flag to specify if we bias D_convs (def: false)")
 # TODO: noise decay is under check
 flags.DEFINE_float("denoise_lbound", 0.01, "Min noise std to be still alive (Def: 0.001)")
 flags.DEFINE_float("noise_decay", 0.7, "Decay rate of noise std (Def: 0.7)")
@@ -33,6 +39,8 @@ flags.DEFINE_string("save_path", "segan_results", "Path to save out model "
                                                    ").")
 flags.DEFINE_string("g_nl", "leaky", "Type of nonlinearity in G: leaky or prelu. (Def: leaky).")
 flags.DEFINE_string("model", "gan", "Type of model to train: gan or ae. (Def: gan).")
+flags.DEFINE_string("deconv_type", "deconv", "Type of deconv method: deconv or "
+                                             "nn_deconv (Def: deconv).")
 flags.DEFINE_string("g_type", "ae", "Type of G to use: ae or dwave. (Def: ae).")
 flags.DEFINE_float("g_learning_rate", 0.0002, "G learning_rate (Def: 0.0002)")
 flags.DEFINE_float("d_learning_rate", 0.0002, "D learning_rate (Def: 0.0002)")

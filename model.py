@@ -67,6 +67,12 @@ class SEGAN(Model):
         self.devices = devices
         self.z_dim = args.z_dim
         self.z_depth = args.z_depth
+        # type of deconv
+        self.deconv_type = deconv_type
+        # specify if use biases or not
+        self.bias_downconv = args.bias_downconv
+        self.bias_deconv = args.bias_deconv
+        self.bias_D_conv = args.bias_D_conv
         # clip D values
         self.d_clip_weights = False
         # apply VBN or regular BN?
