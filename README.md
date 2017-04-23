@@ -64,7 +64,7 @@ A sample of G losses is interesting to see as stated in the paper, where L1 foll
 
 ### Loading model and prediction
 
-First, the trained weights will have to be downloaded from [here](https://drive.google.com/open?id=0B6xY-R8JAa8rcGRld1dreGl1RlE).
+First, the trained weights will have to be downloaded from [here](http://veu.talp.cat/segan/release_weights/segan_v1.1.tar.gz) and uncompressed.
 
 Then the `main.py` script has the option to process a wav file through the G network (inference mode), where the user MUST specify the trained weights file and the configuration of the trained network. In the case of the v1 SEGAN presented in the paper, the options would be:
 
