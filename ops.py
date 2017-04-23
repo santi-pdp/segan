@@ -243,10 +243,10 @@ def repeat_elements(x, rep, axis):
                          'Typically you need to pass a fully-defined '
                          '`input_shape` argument to your first layer.')
     # slices along the repeat axis
-    splits = tf.split(value=x, num_or_size_splits=x_shape[axis], axis=axis)
+    splits = tf.split(split_dim=axis, num_split=x_shape[axis], value=x)
     # repeat each slice the given number of reps
     x_rep = [s for s in splits for _ in range(rep)]
-    return concatenate(x_rep, axis)
+    return tf.concat(axis, x_rep)
 
 def nn_deconv(x, kwidth=5, dilation=2, init=None, uniform=False,
               bias_init=None, name='nn_deconv1d'):

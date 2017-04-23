@@ -31,9 +31,14 @@ def discriminator(self, wave_in, reuse=False):
                         print('D block {} input shape: {}'
                               ''.format(block_idx, input_.get_shape()),
                               end=' *** ')
+                    bias_init = None
+                    if self.bias_D_conv:
+                        if not reuse:
+                            print('biasing D conv', end=' *** ')
+                        bias_init = tf.constant_initializer(0.)
                     downconv_init = tf.truncated_normal_initializer(stddev=0.02)
                     hi_a = downconv(input_, nfmaps, kwidth=kwidth, pool=pooling,
-                                    init=downconv_init)
+                                    init=downconv_init, bias_init=bias_init)
                     if not reuse:
                         print('downconved shape: {} '
                               ''.format(hi_a.get_shape()), end=' *** ')

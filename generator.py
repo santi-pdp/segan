@@ -198,14 +198,14 @@ class AEGenerator(object):
                 h_i_dim = h_i.get_shape().as_list()
                 out_shape = [h_i_dim[0], h_i_dim[1] * 2, layer_depth]
                 bias_init = None
-                if segan.bias_deconv:
-                    if is_ref:
-                        print('Biasing deconv in G')
-                    bias_init = tf.constant_initializer(0.)
                 # deconv
                 if segan.deconv_type == 'deconv':
                     if is_ref:
                         print('-- Transposed deconvolution type --')
+                        if segan.bias_deconv:
+                            print('Biasing deconv in G')
+                    if segan.bias_deconv:
+                        bias_init = tf.constant_initializer(0.)
                     h_i_dcv = deconv(h_i, out_shape, kwidth=kwidth, dilation=2,
                                      init=tf.truncated_normal_initializer(stddev=0.02),
                                      bias_init=bias_init,
@@ -213,7 +213,11 @@ class AEGenerator(object):
                 elif segan.deconv_type == 'nn_deconv':
                     if is_ref:
                         print('-- NN interpolated deconvolution type --')
-                    h_i_dcv = nn_deconv(h_i, kwdith=kwidth, dilation=2,
+                        if segan.bias_deconv:
+                            print('Biasing deconv in G')
+                    if segan.bias_deconv:
+                        bias_init = 0.
+                    h_i_dcv = nn_deconv(h_i, kwidth=kwidth, dilation=2,
                                         init=tf.truncated_normal_initializer(stddev=0.02),
                                         bias_init=bias_init,
                                         name='dec_{}'.format(layer_idx))
