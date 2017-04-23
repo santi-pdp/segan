@@ -150,8 +150,14 @@ class AEGenerator(object):
             # dec ~ [8x2048, 16x1024, 32x512, 64x512, 8x256, 256x256, 512x128, 1024x128, 2048x64, 4096x64, 8192x32, 16384x1]
             #FIRST ENCODER
             for layer_idx, layer_depth in enumerate(segan.g_enc_depths):
+                bias_init = None
+                if segan.bias_downconv:
+                    if is_ref:
+                        print('Biasing downconv in G')
+                    bias_init = tf.constant_initializer(0.)
                 h_i_dwn = downconv(h_i, layer_depth, kwidth=kwidth,
                                    init=tf.truncated_normal_initializer(stddev=0.02),
+                                   bias_init=bias_init,
                                    name='enc_{}'.format(layer_idx))
                 if is_ref:
                     print('Downconv {} -> {}'.format(h_i.get_shape(),
@@ -191,10 +197,28 @@ class AEGenerator(object):
             for layer_idx, layer_depth in enumerate(g_dec_depths):
                 h_i_dim = h_i.get_shape().as_list()
                 out_shape = [h_i_dim[0], h_i_dim[1] * 2, layer_depth]
+                bias_init = None
+                if segan.bias_deconv:
+                    if is_ref:
+                        print('Biasing deconv in G')
+                    bias_init = tf.constant_initializer(0.)
                 # deconv
-                h_i_dcv = deconv(h_i, out_shape, kwidth=kwidth, dilation=2,
-                                 init=tf.truncated_normal_initializer(stddev=0.02),
-                                 name='dec_{}'.format(layer_idx))
+                if segan.deconv_type == 'deconv':
+                    if is_ref:
+                        print('-- Transposed deconvolution type --')
+                    h_i_dcv = deconv(h_i, out_shape, kwidth=kwidth, dilation=2,
+                                     init=tf.truncated_normal_initializer(stddev=0.02),
+                                     bias_init=bias_init,
+                                     name='dec_{}'.format(layer_idx))
+                elif segan.deconv_type == 'nn_deconv':
+                    if is_ref:
+                        print('-- NN interpolated deconvolution type --')
+                    h_i_dcv = nn_deconv(h_i, kwdith=kwidth, dilation=2,
+                                        init=tf.truncated_normal_initializer(stddev=0.02),
+                                        bias_init=bias_init,
+                                        name='dec_{}'.format(layer_idx))
+                else:
+                    raise ValueError('Unknown deconv type {}'.format(segan.deconv_type))
                 if is_ref:
                     print('Deconv {} -> {}'.format(h_i.get_shape(),
                                                    h_i_dcv.get_shape()))

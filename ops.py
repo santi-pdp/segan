@@ -220,6 +220,44 @@ def residual_block(input_, dilation, kwidth, num_kernels=1,
             return res
 
 
+# Code from keras backend 
+# https://github.com/fchollet/keras/blob/master/keras/backend/tensorflow_backend.py
+def repeat_elements(x, rep, axis):
+    """Repeats the elements of a tensor along an axis, like `np.repeat`.
+    If `x` has shape `(s1, s2, s3)` and `axis` is `1`, the output
+    will have shape `(s1, s2 * rep, s3)`.
+    # Arguments
+        x: Tensor or variable.
+        rep: Python integer, number of times to repeat.
+        axis: Axis along which to repeat.
+    # Raises
+        ValueError: In case `x.shape[axis]` is undefined.
+    # Returns
+        A tensor.
+    """
+    x_shape = x.get_shape().as_list()
+    if x_shape[axis] is None:
+        raise ValueError('Axis ' + str(axis) + ' of input tensor '
+                         'should have a defined dimension, but is None. '
+                         'Full tensor shape: ' + str(tuple(x_shape)) + '. '
+                         'Typically you need to pass a fully-defined '
+                         '`input_shape` argument to your first layer.')
+    # slices along the repeat axis
+    splits = tf.split(value=x, num_or_size_splits=x_shape[axis], axis=axis)
+    # repeat each slice the given number of reps
+    x_rep = [s for s in splits for _ in range(rep)]
+    return concatenate(x_rep, axis)
+
+def nn_deconv(x, kwidth=5, dilation=2, init=None, uniform=False,
+              bias_init=None, name='nn_deconv1d'):
+    # first compute nearest neighbour interpolated x
+    interp_x = repeat_elements(x, dilation, 1)
+    # run a convolution over the interpolated fmap
+    dec = conv1d(interp_x, kwidth=5, num_kernels=1, init=init, uniform=uniform, 
+                 bias_init=bias_init, name=name, padding='SAME')
+    return dec
+
+
 def deconv(x, output_shape, kwidth=5, dilation=2, init=None, uniform=False,
            bias_init=None, name='deconv1d'):
     input_shape = x.get_shape()
@@ -254,7 +292,6 @@ def deconv(x, output_shape, kwidth=5, dilation=2, init=None, uniform=False,
         # reshape back to 1d
         deconv = tf.reshape(deconv, output_shape)
         return deconv
-
 
 def conv2d(input_, output_dim, k_h, k_w, stddev=0.05, name="conv2d", with_w=False):
     with tf.variable_scope(name):

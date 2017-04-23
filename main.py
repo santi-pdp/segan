@@ -5,6 +5,7 @@ from model import SEGAN, SEAE
 import os
 from tensorflow.python.client import device_lib
 from scipy.io import wavfile
+from data_loader import pre_emph
 
 
 devices = device_lib.list_local_devices()
@@ -19,6 +20,12 @@ flags.DEFINE_integer("denoise_epoch", 5, "Epoch where noise in disc is "
                                           "removed (Def: 5).")
 flags.DEFINE_integer("l1_remove_epoch", 150, "Epoch where L1 in G is "
                                            "removed (Def: 150).")
+flags.DEFINE_boolean("bias_deconv", False,
+                     "Flag to specify if we bias deconvs (Def: False)")
+flags.DEFINE_boolean("bias_downconv", False,
+                     "flag to specify if we bias downconvs (def: false)")
+flags.DEFINE_boolean("bias_D_conv", False,
+                     "flag to specify if we bias D_convs (def: false)")
 # TODO: noise decay is under check
 flags.DEFINE_float("denoise_lbound", 0.01, "Min noise std to be still alive (Def: 0.001)")
 flags.DEFINE_float("noise_decay", 0.7, "Decay rate of noise std (Def: 0.7)")
@@ -32,10 +39,13 @@ flags.DEFINE_string("save_path", "segan_results", "Path to save out model "
                                                    ").")
 flags.DEFINE_string("g_nl", "leaky", "Type of nonlinearity in G: leaky or prelu. (Def: leaky).")
 flags.DEFINE_string("model", "gan", "Type of model to train: gan or ae. (Def: gan).")
+flags.DEFINE_string("deconv_type", "deconv", "Type of deconv method: deconv or "
+                                             "nn_deconv (Def: deconv).")
 flags.DEFINE_string("g_type", "ae", "Type of G to use: ae or dwave. (Def: ae).")
 flags.DEFINE_float("g_learning_rate", 0.0002, "G learning_rate (Def: 0.0002)")
 flags.DEFINE_float("d_learning_rate", 0.0002, "D learning_rate (Def: 0.0002)")
 flags.DEFINE_float("beta_1", 0.5, "Adam beta 1 (Def: 0.5)")
+flags.DEFINE_float("preemph", 0.95, "Pre-emph factor (Def: 0.95)")
 flags.DEFINE_string("synthesis_path", "dwavegan_samples", "Path to save output"
                                                           " generated samples."
                                                           " (Def: dwavegan_sam"
@@ -48,6 +58,10 @@ flags.DEFINE_string("test_wav", None, "name of test wav (it won't train)")
 flags.DEFINE_string("weights", None, "Weights file")
 FLAGS = flags.FLAGS
 
+def pre_emph_test(coeff, canvas_size):
+    x_ = tf.placeholder(tf.float32, shape=[canvas_size,])
+    x_preemph = pre_emph(x_, coeff)
+    return x_, x_preemph
 
 def main(_):
     print('Parsed arguments: ', FLAGS.__flags)
@@ -90,6 +104,10 @@ def main(_):
             if fm != 16000:
                 raise ValueError('16kHz required! Test file is different')
             wave = (2./65535.) * (wav_data.astype(np.float32) - 32767) + 1.
+            if FLAGS.preemph  > 0:
+                print('preemph test wave with {}'.format(FLAGS.preemph))
+                x_pholder, preemph_op = pre_emph_test(FLAGS.preemph, wave.shape[0])
+                wave = sess.run(preemph_op, feed_dict={x_pholder:wave})
             print('test wave shape: ', wave.shape)
             print('test wave min:{}  max:{}'.format(np.min(wave), np.max(wave)))
             c_wave = se_model.clean(wave)

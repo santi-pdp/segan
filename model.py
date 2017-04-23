@@ -6,7 +6,7 @@ from scipy.io import wavfile
 from generator import *
 from discriminator import *
 import numpy as np
-from data_loader import read_and_decode
+from data_loader import read_and_decode, de_emph
 from bnorm import VBN
 from ops import *
 import timeit
@@ -67,6 +67,12 @@ class SEGAN(Model):
         self.devices = devices
         self.z_dim = args.z_dim
         self.z_depth = args.z_depth
+        # type of deconv
+        self.deconv_type = deconv_type
+        # specify if use biases or not
+        self.bias_downconv = args.bias_downconv
+        self.bias_deconv = args.bias_deconv
+        self.bias_D_conv = args.bias_D_conv
         # clip D values
         self.d_clip_weights = False
         # apply VBN or regular BN?
@@ -75,6 +81,12 @@ class SEGAN(Model):
         # num of updates to be applied to D before G
         # this is k in original GAN paper (https://arxiv.org/abs/1406.2661)
         self.disc_updates = 1
+        # set preemph factor
+        self.preemph = args.preemph
+        if self.preemph > 0:
+            print('*** Applying pre-emphasis of {} ***'.format(self.preemph))
+        else:
+            print('--- No pre-emphasis applied ---')
         # canvas size
         self.canvas_size = args.canvas_size
         self.deactivated_noise = False
@@ -138,7 +150,8 @@ class SEGAN(Model):
             # create the nodes to load for input pipeline
             filename_queue = tf.train.string_input_producer([self.e2e_dataset])
             self.get_wav, self.get_noisy = read_and_decode(filename_queue,
-                                                           2 ** 14)
+                                                           self.canvas_size,
+                                                           self.preemph)
         # load the data to input pipeline
         wavbatch, \
         noisybatch = tf.train.shuffle_batch([self.get_wav,
@@ -454,17 +467,43 @@ class SEGAN(Model):
                     swaves = sample_wav
                     sample_dif = sample_wav - sample_noisy
                     for m in range(min(20, canvas_w.shape[0])):
-                        print('w{} max: {} min: {}'.format(m, np.max(canvas_w[m]), np.min(canvas_w[m])))
-                        wavfile.write(os.path.join(save_path, 'sample_{}-{}.wav'.format(counter, m)), 16e3, canvas_w[m])
-                        if not os.path.exists(os.path.join(save_path, 'gtruth_{}.wav'.format(m))):
-                            wavfile.write(os.path.join(save_path, 'gtruth_{}.wav'.format(m)), 16e3, swaves[m])
-                            wavfile.write(os.path.join(save_path, 'noisy_{}.wav'.format(m)), 16e3, sample_noisy[m])
-                            wavfile.write(os.path.join(save_path, 'dif_{}.wav'.format(m)), 16e3, sample_dif[m])
-                        np.savetxt(os.path.join(save_path, 'd_rl_losses.txt'), d_rl_losses)
-                        np.savetxt(os.path.join(save_path, 'd_fk_losses.txt'), d_fk_losses)
-                        #np.savetxt(os.path.join(save_path, 'd_nfk_losses.txt'), d_nfk_losses)
-                        np.savetxt(os.path.join(save_path, 'g_adv_losses.txt'), g_adv_losses)
-                        np.savetxt(os.path.join(save_path, 'g_l1_losses.txt'), g_l1_losses)
+                        print('w{} max: {} min: {}'.format(m,
+                                                           np.max(canvas_w[m]),
+                                                           np.min(canvas_w[m])))
+                        wavfile.write(os.path.join(save_path,
+                                                   'sample_{}-'
+                                                   '{}.wav'.format(counter, m)),
+                                      16e3,
+                                      de_emph(canvas_w[m],
+                                              self.preemph))
+                        m_gtruth_path = os.path.join(save_path, 'gtruth_{}.'
+                                                                'wav'.format(m))
+                        if not os.path.exists(m_gtruth_path):
+                            wavfile.write(os.path.join(save_path,
+                                                       'gtruth_{}.'
+                                                       'wav'.format(m)),
+                                          16e3,
+                                          de_emph(swaves[m],
+                                                  self.preemph))
+                            wavfile.write(os.path.join(save_path,
+                                                       'noisy_{}.'
+                                                       'wav'.format(m)),
+                                          16e3,
+                                          de_emph(sample_noisy[m],
+                                                  self.preemph))
+                            wavfile.write(os.path.join(save_path,
+                                                       'dif_{}.wav'.format(m)),
+                                          16e3,
+                                          de_emph(sample_dif[m],
+                                                  self.preemph))
+                        np.savetxt(os.path.join(save_path, 'd_rl_losses.txt'),
+                                   d_rl_losses)
+                        np.savetxt(os.path.join(save_path, 'd_fk_losses.txt'),
+                                   d_fk_losses)
+                        np.savetxt(os.path.join(save_path, 'g_adv_losses.txt'),
+                                   g_adv_losses)
+                        np.savetxt(os.path.join(save_path, 'g_l1_losses.txt'),
+                                   g_l1_losses)
 
                 if batch_idx >= num_batches:
                     curr_epoch += 1
@@ -508,14 +547,14 @@ class SEGAN(Model):
             x: numpy array containing the normalized noisy waveform
         """
         c_res = None
-        for beg_i in range(0, x.shape[0], 2 ** 14):
-            if x.shape[0] - beg_i  < 2 ** 14:
+        for beg_i in range(0, x.shape[0], self.canvas_size):
+            if x.shape[0] - beg_i  < self.canvas_size:
                 length = x.shape[0] - beg_i
-                pad = (2 ** 14) - length
+                pad = (self.canvas_size) - length
             else:
-                length = 2 ** 14
+                length = self.canvas_size
                 pad = 0
-            x_ = np.zeros((self.batch_size, 2 ** 14))
+            x_ = np.zeros((self.batch_size, self.canvas_size))
             if pad > 0:
                 x_[0] = np.concatenate((x[beg_i:beg_i + length], np.zeros(pad)))
             else:
@@ -524,7 +563,7 @@ class SEGAN(Model):
             fdict = {self.gtruth_noisy[0]:x_}
             canvas_w = self.sess.run(self.Gs[0],
                                      feed_dict=fdict)[0]
-            canvas_w = canvas_w.reshape((2 ** 14))
+            canvas_w = canvas_w.reshape((self.canvas_size))
             print('canvas w shape: ', canvas_w.shape)
             if pad > 0:
                 print('Removing padding of {} samples'.format(pad))
@@ -534,6 +573,8 @@ class SEGAN(Model):
                 c_res = canvas_w
             else:
                 c_res = np.concatenate((c_res, canvas_w))
+        # deemphasize
+        c_res = de_emph(c_res, self.preemph)
         return c_res
 
 
