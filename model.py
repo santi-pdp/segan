@@ -535,6 +535,10 @@ class SEGAN(Model):
                     # done training
                     print('Done training; epoch limit {} '
                           'reached.'.format(self.epoch))
+                    print('Saving last model at iteration {}'.format(counter))
+                    self.save(config.save_path, counter)
+                    self.writer.add_summary(_g_sum, counter)
+                    self.writer.add_summary(_d_sum, counter)
                     break
         except tf.errors.OutOfRangeError:
             print('Done training; epoch limit {} reached.'.format(self.epoch))
@@ -796,6 +800,9 @@ class SEAE(Model):
                     # done training
                     print('Done training; epoch limit {} '
                           'reached.'.format(self.epoch))
+                    print('Saving last model at iteration {}'.format(counter))
+                    self.save(config.save_path, counter)
+                    self.writer.add_summary(_g_sum, counter)
                     break
         except tf.errors.OutOfRangeError:
             print('[!] Reached queues limits in training loop')
