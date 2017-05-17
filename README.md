@@ -83,6 +83,19 @@ the save path.
 * **Antonio Bonafonte** (TALP-UPC, BarcelonaTech)
 * **Joan Serrà** (Telefónica Research, Barcelona)
 
+### Reference
+
+If the code of this repository was useful for your research, please cite our work:
+
+```
+@article{pascual2017segan,
+  title={SEGAN: Speech Enhancement Generative Adversarial Network},
+  author={Pascual, Santiago and Bonafonte, Antonio and Serr{\`a}, Joan},
+  journal={arXiv preprint arXiv:1703.09452},
+  year={2017}
+}
+```
+
 ### Contact
 
 e-mail: santi.pascual@upc.edu
