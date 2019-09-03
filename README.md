@@ -85,8 +85,6 @@ the save path.
 
 ### Reference
 
-If the code of this repository was useful for your research, please cite our work:
-
 ```
 @article{pascual2017segan,
   title={SEGAN: Speech Enhancement Generative Adversarial Network},
@@ -99,3 +97,9 @@ If the code of this repository was useful for your research, please cite our wor
 ### Contact
 
 e-mail: santi.pascual@upc.edu
+
+### Notes
+
+* If using this code, parts of it, or developments from it, please cite the above reference.
+* We do not provide any support or assistance for the supplied code nor we offer any other compilation/variant of it.
+* We assume no responsibility regarding the provided code.
