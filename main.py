@@ -77,11 +77,12 @@ def main(_):
     config.allow_soft_placement=True
     udevices = []
     for device in devices:
-        if len(devices) > 1 and 'cpu' in device.name:
+        if len(devices) > 1 and 'CPU' in device.name:
             # Use cpu only when we dont have gpus
             continue
         print('Using device: ', device.name)
         udevices.append(device.name)
+    print("!!!!!!", udevices)
     # execute the session
     with tf.Session(config=config) as sess:
         if FLAGS.model == 'gan':
@@ -112,7 +113,7 @@ def main(_):
             print('test wave min:{}  max:{}'.format(np.min(wave), np.max(wave)))
             c_wave = se_model.clean(wave)
             print('c wave min:{}  max:{}'.format(np.min(c_wave), np.max(c_wave)))
-            wavfile.write(os.path.join(FLAGS.save_clean_path, wavname), 16e3, c_wave)
+            wavfile.write(os.path.join(FLAGS.save_clean_path, wavname), 16000, c_wave)
             print('Done cleaning {} and saved '
                   'to {}'.format(FLAGS.test_wav,
                                  os.path.join(FLAGS.save_clean_path, wavname)))

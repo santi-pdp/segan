@@ -120,14 +120,15 @@ class SEGAN(Model):
     def build_model(self, config):
         all_d_grads = []
         all_g_grads = []
-        d_opt = tf.train.RMSPropOptimizer(config.d_learning_rate)
-        g_opt = tf.train.RMSPropOptimizer(config.g_learning_rate)
-        #d_opt = tf.train.AdamOptimizer(config.d_learning_rate,
-        #                               beta1=config.beta_1)
-        #g_opt = tf.train.AdamOptimizer(config.g_learning_rate,
-        #                               beta1=config.beta_1)
+        #d_opt = tf.train.RMSPropOptimizer(config.d_learning_rate)
+        #g_opt = tf.train.RMSPropOptimizer(config.g_learning_rate)
+        d_opt = tf.train.AdamOptimizer(config.d_learning_rate,
+                                       beta1=config.beta_1)
+        g_opt = tf.train.AdamOptimizer(config.g_learning_rate,
+                                       beta1=config.beta_1)
 
-        for idx, device in enumerate(self.devices):
+        with tf.variable_scope(tf.get_variable_scope()) as scope:
+          for idx, device in enumerate(self.devices):
             with tf.device("/%s" % device):
                 with tf.name_scope("device_%s" % idx):
                     with variables_on_gpu0():
@@ -138,7 +139,7 @@ class SEGAN(Model):
                                                           var_list=self.g_vars)
                         all_d_grads.append(d_grads)
                         all_g_grads.append(g_grads)
-                        tf.get_variable_scope().reuse_variables()
+
         avg_d_grads = average_gradients(all_d_grads)
         avg_g_grads = average_gradients(all_g_grads)
         self.d_opt = d_opt.apply_gradients(avg_d_grads)
@@ -197,7 +198,7 @@ class SEGAN(Model):
             # make a dummy copy of discriminator to have variables and then
             # be able to set up the variable reuse for all other devices
             # merge along channels and this would be a real batch
-            dummy_joint = tf.concat(2, [wavbatch, noisybatch])
+            dummy_joint = tf.concat([wavbatch, noisybatch], 2)
             dummy = discriminator(self, dummy_joint,
                                   reuse=False)
 
@@ -207,8 +208,8 @@ class SEGAN(Model):
         self.zs.append(z)
 
         # add new dimension to merge with other pairs
-        D_rl_joint = tf.concat(2, [wavbatch, noisybatch])
-        D_fk_joint = tf.concat(2, [G, noisybatch])
+        D_rl_joint = tf.concat([wavbatch, noisybatch], 2)
+        D_fk_joint = tf.concat([G, noisybatch], 2)
         # build rl discriminator
         d_rl_logits = discriminator(self, D_rl_joint, reuse=True)
         # build fk G discriminator
@@ -243,7 +244,7 @@ class SEGAN(Model):
         d_loss = d_rl_loss + d_fk_loss
 
         # Add the L1 loss to G
-        g_l1_loss = self.l1_lambda * tf.reduce_mean(tf.abs(tf.sub(G,
+        g_l1_loss = self.l1_lambda * tf.reduce_mean(tf.abs(tf.subtract(G,
                                                                   wavbatch)))
 
         g_loss = g_adv_loss + g_l1_loss

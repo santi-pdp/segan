@@ -7,7 +7,7 @@ import numpy as np
 def pre_emph(x, coeff=0.95):
     x0 = tf.reshape(x[0], [1,])
     diff = x[1:] - coeff * x[:-1]
-    concat = tf.concat(0, [x0, diff])
+    concat = tf.concat([x0, diff], 0)
     return concat
 
 def de_emph(y, coeff=0.95):
