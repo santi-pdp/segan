@@ -7,7 +7,6 @@ import numpy as np
 
 
 class Generator(object):
-
     def __init__(self, segan):
         self.segan = segan
 
@@ -20,18 +19,17 @@ class Generator(object):
         def make_z(shape, mean=0., std=1., name='z'):
             if is_ref:
                 with tf.variable_scope(name) as scope:
-                    z_init = tf.random_normal_initializer(mean=mean, stddev=std)
-                    z = tf.get_variable("z", shape,
-                                        initializer=z_init,
-                                        trainable=False
-                                        )
+                    z_init = tf.random_normal_initializer(
+                        mean=mean, stddev=std)
+                    z = tf.get_variable(
+                        "z", shape, initializer=z_init, trainable=False)
                     if z.device != "/device:GPU:0":
                         # this has to be created into gpu0
                         print('z.device is {}'.format(z.device))
                         assert False
             else:
-                z = tf.random_normal(shape, mean=mean, stddev=std,
-                                     name=name, dtype=tf.float32)
+                z = tf.random_normal(
+                    shape, mean=mean, stddev=std, name=name, dtype=tf.float32)
             return z
 
         if hasattr(segan, 'generator_built'):
@@ -48,47 +46,60 @@ class Generator(object):
         elif len(in_dims) < 2 or len(in_dims) > 3:
             raise ValueError('Generator input must be 2-D or 3-D')
         kwidth = 3
-        z = make_z([segan.batch_size, h_i.get_shape().as_list()[1],
-                    segan.g_enc_depths[-1]])
+        z = make_z([
+            segan.batch_size,
+            h_i.get_shape().as_list()[1], segan.g_enc_depths[-1]
+        ])
         h_i = tf.concat(2, [h_i, z])
         skip_out = True
         skips = []
         for block_idx, dilation in enumerate(segan.g_dilated_blocks):
-                name = 'g_residual_block_{}'.format(block_idx)
-                if block_idx >= len(segan.g_dilated_blocks) - 1:
-                    skip_out = False
-                if skip_out:
-                    res_i, skip_i = residual_block(h_i,
-                                                   dilation, kwidth, num_kernels=32,
-                                                   bias_init=None, stddev=0.02,
-                                                   do_skip = True,
-                                                   name=name)
-                else:
-                    res_i = residual_block(h_i,
-                                           dilation, kwidth, num_kernels=32,
-                                           bias_init=None, stddev=0.02,
-                                           do_skip = False,
-                                           name=name)
-                # feed the residual output to the next block
-                h_i = res_i
-                if segan.keep_prob < 1:
-                    print('Adding dropout w/ keep prob {} '
-                          'to G'.format(segan.keep_prob))
-                    h_i = tf.nn.dropout(h_i, segan.keep_prob_var)
-                if skip_out:
-                    # accumulate the skip connections
-                    skips.append(skip_i)
-                else:
-                    # for last block, the residual output is appended
-                    skips.append(res_i)
+            name = 'g_residual_block_{}'.format(block_idx)
+            if block_idx >= len(segan.g_dilated_blocks) - 1:
+                skip_out = False
+            if skip_out:
+                res_i, skip_i = residual_block(
+                    h_i,
+                    dilation,
+                    kwidth,
+                    num_kernels=32,
+                    bias_init=None,
+                    stddev=0.02,
+                    do_skip=True,
+                    name=name)
+            else:
+                res_i = residual_block(
+                    h_i,
+                    dilation,
+                    kwidth,
+                    num_kernels=32,
+                    bias_init=None,
+                    stddev=0.02,
+                    do_skip=False,
+                    name=name)
+            # feed the residual output to the next block
+            h_i = res_i
+            if segan.keep_prob < 1:
+                print('Adding dropout w/ keep prob {} '
+                      'to G'.format(segan.keep_prob))
+                h_i = tf.nn.dropout(h_i, segan.keep_prob_var)
+            if skip_out:
+                # accumulate the skip connections
+                skips.append(skip_i)
+            else:
+                # for last block, the residual output is appended
+                skips.append(res_i)
         print('Amount of skip connections: ', len(skips))
         # TODO: last pooling for actual wave
         with tf.variable_scope('g_wave_pooling'):
             skip_T = tf.stack(skips, axis=0)
             skips_sum = tf.reduce_sum(skip_T, axis=0)
             skips_sum = leakyrelu(skips_sum)
-            wave_a = conv1d(skips_sum, kwidth=1, num_kernels=1,
-                            init=tf.truncated_normal_initializer(stddev=0.02))
+            wave_a = conv1d(
+                skips_sum,
+                kwidth=1,
+                num_kernels=1,
+                init=tf.truncated_normal_initializer(stddev=0.02))
             wave = tf.tanh(wave_a)
             segan.gen_wave_summ = histogram_summary('gen_wave', wave)
         print('Last residual wave shape: ', res_i.get_shape())
@@ -96,8 +107,8 @@ class Generator(object):
         segan.generator_built = True
         return wave, z
 
-class AEGenerator(object):
 
+class AEGenerator(object):
     def __init__(self, segan):
         self.segan = segan
 
@@ -111,18 +122,17 @@ class AEGenerator(object):
         def make_z(shape, mean=0., std=1., name='z'):
             if is_ref:
                 with tf.variable_scope(name) as scope:
-                    z_init = tf.random_normal_initializer(mean=mean, stddev=std)
-                    z = tf.get_variable("z", shape,
-                                        initializer=z_init,
-                                        trainable=False
-                                        )
+                    z_init = tf.random_normal_initializer(
+                        mean=mean, stddev=std)
+                    z = tf.get_variable(
+                        "z", shape, initializer=z_init, trainable=False)
                     if z.device != "/device:GPU:0":
                         # this has to be created into gpu0
                         print('z.device is {}'.format(z.device))
                         assert False
             else:
-                z = tf.random_normal(shape, mean=mean, stddev=std,
-                                     name=name, dtype=tf.float32)
+                z = tf.random_normal(
+                    shape, mean=mean, stddev=std, name=name, dtype=tf.float32)
             return z
 
         if hasattr(segan, 'generator_built'):
@@ -155,10 +165,13 @@ class AEGenerator(object):
                     if is_ref:
                         print('Biasing downconv in G')
                     bias_init = tf.constant_initializer(0.)
-                h_i_dwn = downconv(h_i, layer_depth, kwidth=kwidth,
-                                   init=tf.truncated_normal_initializer(stddev=0.02),
-                                   bias_init=bias_init,
-                                   name='enc_{}'.format(layer_idx))
+                h_i_dwn = downconv(
+                    h_i,
+                    layer_depth,
+                    kwidth=kwidth,
+                    init=tf.truncated_normal_initializer(stddev=0.02),
+                    bias_init=bias_init,
+                    name='enc_{}'.format(layer_idx))
                 if is_ref:
                     print('Downconv {} -> {}'.format(h_i.get_shape(),
                                                      h_i_dwn.get_shape()))
@@ -173,7 +186,8 @@ class AEGenerator(object):
                 if do_prelu:
                     if is_ref:
                         print('-- Enc: prelu activation --')
-                    h_i = prelu(h_i, ref=is_ref, name='enc_prelu_{}'.format(layer_idx))
+                    h_i = prelu(
+                        h_i, ref=is_ref, name='enc_prelu_{}'.format(layer_idx))
                     if is_ref:
                         # split h_i into its components
                         alpha_i = h_i[1]
@@ -186,9 +200,11 @@ class AEGenerator(object):
 
             if z_on:
                 # random code is fused with intermediate representation
-                z = make_z([segan.batch_size, h_i.get_shape().as_list()[1],
-                            segan.g_enc_depths[-1]])
-                h_i = tf.concat(2, [z, h_i])
+                z = make_z([
+                    segan.batch_size,
+                    h_i.get_shape().as_list()[1], segan.g_enc_depths[-1]
+                ])
+                h_i = tf.concat([z, h_i], 2)
 
             #SECOND DECODER (reverse order)
             g_dec_depths = segan.g_enc_depths[:-1][::-1] + [1]
@@ -206,10 +222,14 @@ class AEGenerator(object):
                             print('Biasing deconv in G')
                     if segan.bias_deconv:
                         bias_init = tf.constant_initializer(0.)
-                    h_i_dcv = deconv(h_i, out_shape, kwidth=kwidth, dilation=2,
-                                     init=tf.truncated_normal_initializer(stddev=0.02),
-                                     bias_init=bias_init,
-                                     name='dec_{}'.format(layer_idx))
+                    h_i_dcv = deconv(
+                        h_i,
+                        out_shape,
+                        kwidth=kwidth,
+                        dilation=2,
+                        init=tf.truncated_normal_initializer(stddev=0.02),
+                        bias_init=bias_init,
+                        name='dec_{}'.format(layer_idx))
                 elif segan.deconv_type == 'nn_deconv':
                     if is_ref:
                         print('-- NN interpolated deconvolution type --')
@@ -217,12 +237,16 @@ class AEGenerator(object):
                             print('Biasing deconv in G')
                     if segan.bias_deconv:
                         bias_init = 0.
-                    h_i_dcv = nn_deconv(h_i, kwidth=kwidth, dilation=2,
-                                        init=tf.truncated_normal_initializer(stddev=0.02),
-                                        bias_init=bias_init,
-                                        name='dec_{}'.format(layer_idx))
+                    h_i_dcv = nn_deconv(
+                        h_i,
+                        kwidth=kwidth,
+                        dilation=2,
+                        init=tf.truncated_normal_initializer(stddev=0.02),
+                        bias_init=bias_init,
+                        name='dec_{}'.format(layer_idx))
                 else:
-                    raise ValueError('Unknown deconv type {}'.format(segan.deconv_type))
+                    raise ValueError('Unknown deconv type {}'.format(
+                        segan.deconv_type))
                 if is_ref:
                     print('Deconv {} -> {}'.format(h_i.get_shape(),
                                                    h_i_dcv.get_shape()))
@@ -231,8 +255,10 @@ class AEGenerator(object):
                     if do_prelu:
                         if is_ref:
                             print('-- Dec: prelu activation --')
-                        h_i = prelu(h_i, ref=is_ref,
-                                    name='dec_prelu_{}'.format(layer_idx))
+                        h_i = prelu(
+                            h_i,
+                            ref=is_ref,
+                            name='dec_prelu_{}'.format(layer_idx))
                         if is_ref:
                             # split h_i into its components
                             alpha_i = h_i[1]
@@ -247,7 +273,7 @@ class AEGenerator(object):
                     if is_ref:
                         print('Fusing skip connection of '
                               'shape {}'.format(skip_.get_shape()))
-                    h_i = tf.concat(2, [h_i, skip_])
+                    h_i = tf.concat([h_i, skip_], 2)
 
                 else:
                     if is_ref:

@@ -17,8 +17,8 @@ This model deals with raw speech waveforms on many noise conditions at different
 
 ### Dependencies
 
-* Python 2.7
-* TensorFlow 0.12
+* Python 3.5.3
+* TensorFlow 1.9.0
 
 You can install the requirements either to your virtualenv or the system via pip with:
 
