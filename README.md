@@ -1,4 +1,4 @@
-## SEGAN: Speech Enhancement Generative Adversarial Network
+## SEGAN: Speech Enhancement Generative Adversarial Network (Python3/Tensorflow1.15/Conda)
 
 ### Introduction
 
@@ -13,17 +13,18 @@ This model deals with raw speech waveforms on many noise conditions at different
 **All the project is developed with TensorFlow**. There are two repositories that were good references on how GANs are defined and deployed:
 
 * [improved-gan](https://github.com/openai/improved-gan): implementing improvements to train GANs in a more stable way
-*  [DCGAN-tensorflow](https://github.com/carpedm20/DCGAN-tensorflow): implementation of the DCGAN in tensorflow
+* [DCGAN-tensorflow](https://github.com/carpedm20/DCGAN-tensorflow): implementation of the DCGAN in tensorflow
+* [segan (python2)](https://github.com/santi-pdp/segan): implementation of the DCGAN in tensorflow
 
 ### Dependencies
 
-* Python 2.7
-* TensorFlow 0.12
+* Python 3.6-3.7
+* TensorFlow 1.12-1.15
 
-You can install the requirements either to your virtualenv or the system via pip with:
+Create env with anaconda:
 
-```
-pip install -r requirements.txt
+```bash
+conda env create -f environment36.yml
 ```
 
 ### Data
@@ -44,8 +45,14 @@ python make_tfrecords.py --force-gen --cfg cfg/e2e_maker.cfg
 
 Once you have the TFRecords file created in `data/segan.tfrecords` you can simply run the training process with:
 
-```
+```bash
 ./train_segan.sh
+```
+
+or run the training process in Windows with:
+
+```bash
+train_segan.bat
 ```
 
 By default this will take all the available GPUs in your system, if any. Otherwise it will just take the CPU.
