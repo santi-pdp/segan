@@ -1,0 +1,1 @@
+set CUDA_VISIBLE_DEVICES="0" & python main.py --init_noise_std 0. --save_path segan_allbiased_preemph --init_l1_weight 100. --batch_size 100 --g_nl prelu --save_freq 50 --preemph 0.95 --epoch 86 --bias_deconv True --bias_downconv True --bias_D_conv True
