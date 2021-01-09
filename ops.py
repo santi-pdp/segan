@@ -89,12 +89,12 @@ def highway(input_, size, layer_size=1, bias=-2, f=tf.nn.relu, name='hw'):
     where g is nonlinearity, t is transform gate, and (1 - t) is carry gate.
     """
     output = input_
-    for idx in xrange(layer_size):
+    for idx in range(layer_size):
         lin_scope = '{}_output_lin_{}'.format(name, idx)
-        output = f(tf.nn.rnn_cell._linear(output, size, 0, scope=lin_scope))
+        output = f(tf.contrib.rnn._linear(output, size, 0, scope=lin_scope))
         transform_scope = '{}_transform_lin_{}'.format(name, idx)
         transform_gate = tf.sigmoid(
-            tf.nn.rnn_cell._linear(input_, size, 0, scope=transform_scope) + bias)
+            tf.contrib.rnn._linear(input_, size, 0, scope=transform_scope) + bias)
         carry_gate = 1. - transform_gate
 
         output = transform_gate * output + carry_gate * input_
@@ -202,7 +202,7 @@ def residual_block(input_, dilation, kwidth, num_kernels=1,
         z = tf.nn.sigmoid(z_a)
         print('gate shape: ', z.get_shape())
         # element-wise apply the gate
-        gated_h = tf.mul(z, h)
+        gated_h = tf.multiply(z, h)
         print('gated h shape: ', gated_h.get_shape())
         #make res connection
         h_ = conv1d(gated_h, kwidth=1, num_kernels=1,
@@ -246,7 +246,7 @@ def repeat_elements(x, rep, axis):
     splits = tf.split(split_dim=axis, num_split=x_shape[axis], value=x)
     # repeat each slice the given number of reps
     x_rep = [s for s in splits for _ in range(rep)]
-    return tf.concat(axis, x_rep)
+    return tf.concat(x_rep, axis)
 
 def nn_deconv(x, kwidth=5, dilation=2, init=None, uniform=False,
               bias_init=None, name='nn_deconv1d'):
@@ -281,7 +281,7 @@ def deconv(x, output_shape, kwidth=5, dilation=2, init=None, uniform=False,
         except AttributeError:
             # support for versions of TF before 0.7.0
             # based on https://github.com/carpedm20/DCGAN-tensorflow
-            deconv = tf.nn.deconv2d(x2d, W, output_shape=o2d,
+            deconv = tf.nn.conv2d_transpose(x2d, W, output_shape=o2d,
                                     strides=[1, dilation, 1, 1])
         if bias_init is not None:
             b = tf.get_variable('b', [out_channels],
@@ -339,7 +339,7 @@ def average_gradients(tower_grads):
             grads.append(expanded_g)
 
         # Build the tensor and average along tower dimension
-        grad = tf.concat(0, grads)
+        grad = tf.concat(grads, 0)
         grad = tf.reduce_mean(grad, 0)
 
         # The Variables are redundant because they are shared across towers
