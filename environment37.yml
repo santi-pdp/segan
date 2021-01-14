@@ -1,0 +1,16 @@
+name: segan37
+channels:
+  - conda-forge
+  - anaconda
+  - menpo
+dependencies:
+  - python=3.7
+  - cudatoolkit=10.0
+  - cudnn=7
+  - scipy=1.1
+  - wget
+  - pip
+  - pip:
+    - cython
+    - tensorflow_gpu==1.15
+    - toml==0.9.2
